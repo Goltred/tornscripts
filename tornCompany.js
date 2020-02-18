@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Company Stock
 // @namespace    Goltred.Company
-// @version      0.3
+// @version      0.4
 // @description  Calculate stock reorder based on sales/ratio override and max storage capacity
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompany.js
@@ -9,6 +9,11 @@
 // @match        https://www.torn.com/companies.php
 // @grant        none
 // ==/UserScript==
+
+// Globals
+// Let's assume a max storage of 100k
+const maxStorage = 100000;
+let manageCompany = $('.manage-company');
 
 function calculateStock() {
   // Get total stock. Number comes with a ',' which is removed to have a full int
@@ -20,7 +25,7 @@ function calculateStock() {
   let stockRows = $("ul.stock-list > li > div.acc-body");
   $.each(stockRows, (idx, row) => {
     // Get the quantity div
-    let qInput = $(row).find('div.quantity');
+    let qInput = $(row).find('input:text');
 
     // Get the current percentages
     let soldQ = parseInt(clearText($(row).find('div.sold-daily').first()).replace(',', '').trim());
@@ -40,13 +45,20 @@ function clearText(el) {
   return clone.text().trim()
 }
 
-// Let's assume a max storage of 100k
-const maxStorage = 100000;
+function waitForStock() {
+  let waitTimer = setInterval(() => {
+    if ($(manageCompany).find('ul.stock-list')) {
+      clearInterval(waitTimer);
+      calculateStock()
+    }
+  }, 200)
+}
 
 $(document).ready(() => {
-  $("#manage-tabs").on("change", (evt) => {
-    if (evt.target.value === 'stock') calculateStock();
-  });
+  let stockLink = manageCompany.find('#ui-id-8');
+  stockLink.on('click', () => waitForStock());
 
-  $("ul.company-tabs").find("i.stock-icon").parent("a").on("click", () => calculateStock());
+  $("#manage-tabs").on("change", (evt) => {
+    if (evt.target.value === 'stock') waitForStock();
+  });
 });
