@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 1.4.2
+// @version 1.4.4
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author muffenman and help from Pi77Bull - Modified by Goltred & Reborn121
-// @updateURL https://github.com/Goltred/tornscripts/blob/master/torn-hospital.js
-// @downloadURL https://github.com/Goltred/tornscripts/blob/master/torn-hospital.js
+// @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
+// @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
 // @match https://www.torn.com/factions.php?step=profile&ID=*
 // @grant none
 // @run-at document-end
@@ -39,14 +39,14 @@ $('.member-list > li:contains("Hospital")').each((i, j) => { //loops through eve
 });
 //console.log("Made by muffenman [2002712] and Pi77Bull [2082618] . If you like it, send us a message or a gift either is fine :P \"I love your script!\".");
 
-// Wait for the war list to load
+// Wait for the war list to load - Modified by Goltred
 if (hideWalls) {
   let wallsCheck = setInterval(() => {
-    // Hide faction walls - Modified by Goltred
+    // Hide faction walls
     let el = $("#war-react-root > div > div > ul");
     if (el.length) {
         clearInterval(wallsCheck);
         el.css("display", "none");
     }
-  }, 1000);
+  }, 100);
 }
