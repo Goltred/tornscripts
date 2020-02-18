@@ -4,8 +4,8 @@
 // @version      0.3
 // @description  Calculate stock reorder based on sales/ratio override and max storage capacity
 // @author       Goltred
-// @updateURL    https://github.com/Goltred/tornscripts/blob/master/tornCompany.js
-// @downloadURL  https://github.com/Goltred/tornscripts/blob/master/tornCompany.js
+// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompany.js
+// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompany.js
 // @match        https://www.torn.com/companies.php
 // @grant        none
 // ==/UserScript==
