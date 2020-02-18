@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 1.4.2
+// @version 1.4.3
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author muffenman and help from Pi77Bull - Modified by Goltred
 // @updateURL https://github.com/Goltred/tornscripts/blob/master/torn-hospital.js
@@ -39,5 +39,5 @@ if (hideWalls) {
         clearInterval(wallsCheck);
         el.css("display", "none");
     }
-  }, 1000);
+  }, 100);
 }
