@@ -1,26 +1,15 @@
 // ==UserScript==
 // @name         Torn City - Company Stock
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  Calculate stock reorder based on sales/ratio override and max storage capacity
 // @author       Goltred
+// @updateURL    https://github.com/Goltred/tornscripts/blob/master/tornCompany.js
+// @downloadURL  https://github.com/Goltred/tornscripts/blob/master/tornCompany.js
 // @match        https://www.torn.com/companies.php
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
-
-// Let's assume a max storage of 100k
-const maxStorage = 100000;
-
-(function() {
-  'use strict';
-
-  $("#manage-tabs").on("change", (evt) => {
-    if (evt.target.value === 'stock') calculateStock();
-  });
-
-  $("ul.company-tabs").find("i.stock-icon").parent("a").on("click", () => calculateStock());
-})();
 
 function calculateStock() {
   // Get total stock. Number comes with a ',' which is removed to have a full int
@@ -40,7 +29,7 @@ function calculateStock() {
 
     // Calculate amount to buy
     let amount = parseInt(availableStock * soldP);
-    qInput.append(`<p>${amount}</p>`);
+    qInput.val(amount);
   });
 }
 
@@ -51,3 +40,12 @@ function clearText(el) {
   $(clone).find('span').remove()
   return clone.text().trim()
 }
+
+// Let's assume a max storage of 100k
+const maxStorage = 100000;
+
+$("#manage-tabs").on("change", (evt) => {
+  if (evt.target.value === 'stock') calculateStock();
+});
+
+$("ul.company-tabs").find("i.stock-icon").parent("a").on("click", () => calculateStock());
