@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         Torn City - Company Stock
-// @namespace    http://tampermonkey.net/
-// @version      0.2
+// @namespace    Goltred.Company
+// @version      0.3
 // @description  Calculate stock reorder based on sales/ratio override and max storage capacity
 // @author       Goltred
 // @updateURL    https://github.com/Goltred/tornscripts/blob/master/tornCompany.js
 // @downloadURL  https://github.com/Goltred/tornscripts/blob/master/tornCompany.js
 // @match        https://www.torn.com/companies.php
 // @grant        none
-// @run-at       document-end
 // ==/UserScript==
 
 function calculateStock() {
@@ -44,8 +43,10 @@ function clearText(el) {
 // Let's assume a max storage of 100k
 const maxStorage = 100000;
 
-$("#manage-tabs").on("change", (evt) => {
-  if (evt.target.value === 'stock') calculateStock();
-});
+$(document).ready(() => {
+  $("#manage-tabs").on("change", (evt) => {
+    if (evt.target.value === 'stock') calculateStock();
+  });
 
-$("ul.company-tabs").find("i.stock-icon").parent("a").on("click", () => calculateStock());
+  $("ul.company-tabs").find("i.stock-icon").parent("a").on("click", () => calculateStock());
+});
