@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Torn City - Company Stock
 // @namespace    Goltred.Company
-// @version      0.4
-// @description  Calculate stock reorder based on sales/ratio override and max storage capacity
+// @version      0.5
+// @description  Calculate stock reorder based on sales ratio and max storage capacity
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompany.js
 // @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompany.js
@@ -11,7 +11,8 @@
 // ==/UserScript==
 
 // Globals
-// Let's assume a max storage of 100k
+// Let's assume a max storage of 100k since there is no good way of knowing the actual storage.
+// This should be changed to reflect the actual storage capacity
 const maxStorage = 100000;
 let manageCompany = $('.manage-company');
 
@@ -55,10 +56,7 @@ function waitForStock() {
 }
 
 $(document).ready(() => {
+  // Find the link to the stocks tab
   let stockLink = manageCompany.find('#ui-id-8');
   stockLink.on('click', () => waitForStock());
-
-  $("#manage-tabs").on("change", (evt) => {
-    if (evt.target.value === 'stock') waitForStock();
-  });
 });
