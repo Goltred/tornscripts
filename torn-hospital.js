@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 1.4.2
+// @version 1.4.1
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
-// @author muffenman and help from Pi77Bull
+// @author muffenman and help from Pi77Bull - Modified by Goltred
+// @updateURL https://github.com/Goltred/tornscripts/blob/master/torn-hospital.js
+// @downloadURL https://github.com/Goltred/tornscripts/blob/master/torn-hospital.js
 // @match https://www.torn.com/factions.php?step=profile&ID=*
 // @grant none
 // @run-at document-end
@@ -25,12 +27,12 @@ $(".title .days").text("Time"); //changes Days column title to "Time"
 });
 //console.log("Made by muffenman [2002712] and Pi77Bull [2082618] . If you like it, send us a message or a gift either is fine :P \"I love your script!\".");
 
-// Wait for the war list to load - Modified by Goltred
+// Wait for the war list to load
 let wallsCheck = setInterval(() => {
-  // Hide faction walls
-  let el = $("#war-react-root > div > div > ul");
-  if (el.length) {
-    clearInterval(wallsCheck);
-    el.css("display", "none");
-  }
-}, 1000);
+    // Hide faction walls - Modified by Goltred
+    let el = $("#war-react-root > div > div > ul");
+    if (el.length) {
+        clearInterval(wallsCheck);
+        el.css("display", "none");
+    }
+}, 1000)
