@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Company Stock Calculator
 // @namespace    Goltred.Company
-// @version      0.6
+// @version      0.7
 // @description  Calculate stock reorder based on sales ratio and max storage capacity
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompany.js
@@ -60,4 +60,13 @@ $(document).ready(() => {
   // Find the link to the stocks tab
   let stockLink = manageCompany.find('#ui-id-8');
   stockLink.on('click', () => waitForStock());
+
+  let manageTabs = manageCompany.find('#manage-tabs');
+  if (manageTabs.css('display') === 'inline-block') {
+    manageTabs.on('change', (evt) => {
+      if (evt.target.value === 'stock') {
+          waitForStock();
+      }
+    });
+  }
 });
