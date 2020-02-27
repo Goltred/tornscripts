@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.7
+// @version      0.8
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -78,6 +78,7 @@ function displayFactionMoney(data, userData) {
 
   // Update the label and set the default value money
   label.text('Faction:');
+  moneySpan.css('color', '');
   moneySpan.text('$0');
 
   if (data) {
@@ -87,8 +88,9 @@ function displayFactionMoney(data, userData) {
       const { money_balance } = donations[userData.player_id];
 
       if (money_balance) {
-        // Set color when balance is less than 0
+        // Set colors
         if (money_balance < 0) moneySpan.css('color', 'red');
+        else if (money_balance > 0) moneySpan.css('color', '#678c00');
 
         // Set text, formatting string as money
         moneySpan.text(` $${money_balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
