@@ -31,9 +31,6 @@ class TornAPI {
     const targetUrl = `${this.baseUrl}/faction/?selections=${selections}&key=${this.key}`;
     return new Promise((resolve, reject) => {
       $.get(targetUrl, (data) => {
-        data = {
-          code: 1, error: 'test'
-        };
         if (data.error) reject(`Torn Faction Bank Script: Error Code: ${data.code} - ${data.error}`);
         resolve(data);
       });
