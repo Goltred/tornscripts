@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.4
+// @version      0.5
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -29,8 +29,12 @@ class TornAPI {
 
   async faction(selections = '') {
     const targetUrl = `${this.baseUrl}/faction/?selections=${selections}&key=${this.key}`;
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       $.get(targetUrl, (data) => {
+        data = {
+          code: 1, error: 'test'
+        };
+        if (data.error) reject(`Torn Faction Bank Script: Error Code: ${data.code} - ${data.error}`);
         resolve(data);
       });
     });
@@ -40,6 +44,7 @@ class TornAPI {
     const targetUrl = `${this.baseUrl}/user/?selections=${selections ? selections : ''}&key=${this.key}`;
     return new Promise((resolve) => {
       $.get(targetUrl, (data) => {
+        if (data.error) reject(`Torn Faction Bank Script: ${data.code} - ${data.error}`);
         resolve(data);
       });
     });
@@ -65,23 +70,29 @@ function tcfb_saveAPI() {
 }
 
 function displayFactionMoney(data, userData) {
+  //const statusIcons = $('ul[class^="status-icons"]');
+  const userMoney = $('#user-money');
+
+  const factMoneyP = $('<p style="font-size:.8rem"><strong>Faction: </strong></p>');
+  const moneySpan = $('<span">$0</span>');
+  factMoneyP.append(moneySpan);
+  userMoney.after(factMoneyP);
+
   if (data) {
     const { donations } = data;
-    const { money_balance } = donations[userData.player_id];
+    if (donations) {
+      // I should have some balance
+      const { money_balance } = donations[userData.player_id];
+      console.log(money_balance);
 
-    if (money_balance) {
-      //const statusIcons = $('ul[class^="status-icons"]');
-      const userMoney = $('#user-money');
+      if (money_balance) {
+        // Set colors
+        if (money_balance < 0) moneySpan.css('color', 'red');
+        else if (money_balance > 0) moneySpan.css('color', '#678c00');
 
-      const factMoneyP = $('<p style="font-size:.8rem;"><strong>Faction:</strong></p>');
-      const moneySpan = $('<span style="color: green;"></span>');
-      factMoneyP.append(moneySpan);
-      userMoney.after(factMoneyP);
-
-      if (money_balance < 0) moneySpan.css('color', 'red');
-
-      moneySpan.text(` $${money_balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
-
+        // Set text, formatting string as money
+        moneySpan.text(` $${money_balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
+      }
     }
   }
 }
@@ -97,6 +108,10 @@ if (!apiKey) {
     // Get the donations from the faction
     api.faction('donations').then((facData) => {
       displayFactionMoney(facData, userData);
+    }).catch((err) => {
+      console.error(err);
     });
+  }).catch((err) => {
+    console.error(err);
   });
 }
