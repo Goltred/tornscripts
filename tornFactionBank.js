@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.6
+// @version      0.7
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -67,13 +67,18 @@ function tcfb_saveAPI() {
 }
 
 function displayFactionMoney(data, userData) {
-  //const statusIcons = $('ul[class^="status-icons"]');
-  const userMoney = $('#user-money');
+  // Copy the money point block
+  const moneyPointBlock = $('#user-money').closest('p[class^="point-block"]');
+  const newPointBlock = moneyPointBlock.clone();
 
-  const factMoneyP = $('<p style="font-size:.8rem"><strong>Faction: </strong></p>');
-  const moneySpan = $('<span">$0</span>');
-  factMoneyP.append(moneySpan);
-  userMoney.after(factMoneyP);
+  // Get the label and value fields
+  const spans = newPointBlock.children("span");
+  const label = spans.first();
+  const moneySpan = spans.last();
+
+  // Update the label and set the default value money
+  label.text('Faction:');
+  moneySpan.text('$0');
 
   if (data) {
     const { donations } = data;
@@ -82,15 +87,17 @@ function displayFactionMoney(data, userData) {
       const { money_balance } = donations[userData.player_id];
 
       if (money_balance) {
-        // Set colors
+        // Set color when balance is less than 0
         if (money_balance < 0) moneySpan.css('color', 'red');
-        else if (money_balance > 0) moneySpan.css('color', '#678c00');
 
         // Set text, formatting string as money
         moneySpan.text(` $${money_balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
       }
     }
   }
+
+  // Add the element to the DOM
+  moneyPointBlock.after(newPointBlock);
 }
 
 const apiKey = GM_getValue('apikey');
