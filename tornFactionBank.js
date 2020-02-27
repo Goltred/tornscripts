@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.1
+// @version      0.2
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -69,7 +69,7 @@ function displayFactionMoney(data, userData) {
     const { donations } = data;
     const { money_balance } = donations[userData.player_id];
 
-    if (money_balance > 0) {
+    if (money_balance) {
       //const statusIcons = $('ul[class^="status-icons"]');
       const userMoney = $('#user-money');
 
