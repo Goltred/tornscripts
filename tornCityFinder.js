@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Item Finder
 // @namespace    Goltred.City.Finder
-// @version      0.1
+// @version      0.2
 // @description  Looks for items in the city map and make them visible for easier collection
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js
@@ -29,6 +29,13 @@ let wait = setInterval(() => {
 
     // Get all item pinpoints
     let pinpoints = $('.user-item-pinpoint');
+
+    // Create a new div to contain the list of things found
+    const hrDef = '<hr class="page-head-delimiter m-top10 m-bottom10" />';
+    let itemsDiv = $('<div class="cont-gray10"></div>');
+    itemsDiv.append('<div class="m-bottom10"><strong><p>Torn City - Item Finder</p></strong></div>');
+    itemsDiv.append(`<p>There are <strong>${pinpoints.length}</strong> items to pickup</p>`);
+    $('#map').after(itemsDiv);
 
     $.each(pinpoints, (idx, element) => {
       // Get the previous element, which usually is the image of the item
