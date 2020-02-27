@@ -73,9 +73,15 @@ function displayFactionMoney(data, userData) {
       //const statusIcons = $('ul[class^="status-icons"]');
       const userMoney = $('#user-money');
 
-      const factionMoney = $('<p style="font-size:.6rem; font-color: red;"></p>');
-      factionMoney.html(` <strong>Faction Balance:</strong> ($${money_balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")})`);
-      userMoney.after(factionMoney);
+      const factMoneyP = $('<p style="font-size:.6rem;"><strong>Faction Balance:</strong></p>');
+      const moneySpan = $('<span style="color: green;"></span>');
+      factMoneyP.append(moneySpan);
+      userMoney.after(factMoneyP);
+
+      if (money_balance < 0) moneySpan.css('color', 'red');
+
+      moneySpan.text(` $${money_balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
+
     }
   }
 }
