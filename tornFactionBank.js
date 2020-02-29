@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.8
+// @version      0.9
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -19,7 +19,6 @@ class TornAPI {
   }
 
   async setupUserData() {
-    console.log('setting up');
     let data = await this.user();
     if (data) {
       this.userData.name = data.name;
@@ -52,7 +51,7 @@ function showAPIInput() {
   const body = $('body');
 
   const inputBox = $(`
-<div class="info-msg" style="position: absolute;top: 0;right: 0;background-color: lightgray; border-style: solid; border-left: 5px solid red;">
+<div class="info-msg" id="tcfb-apibox" style="position: absolute;top: 0;right: 0;background-color: lightgray; border-style: solid; border-left: 5px solid red;">
   <p>Enter your API Key</p>
   <input type="text" id="tcfb-input-api" />
   <button id="tcfb-save-api">Save</button>
@@ -64,6 +63,8 @@ function showAPIInput() {
 function tcfb_saveAPI() {
   const val = $('#tcfb-input-api').val();
   GM_setValue('apikey', val);
+  $("#tcfb-apibox").css('display', 'none');
+  main(val);
 }
 
 function displayFactionMoney(data, userData) {
@@ -75,6 +76,11 @@ function displayFactionMoney(data, userData) {
   const spans = newPointBlock.children("span");
   const label = spans.first();
   const moneySpan = spans.last();
+
+  // Move things inside an a element for tooltipping
+  const hoverLink = $('<a href="#" id="tcbf-block"></a>');
+  newPointBlock.append(hoverLink);
+  hoverLink.append(spans);
 
   // Update the label and set the default value money
   label.text('Faction:');
@@ -100,13 +106,15 @@ function displayFactionMoney(data, userData) {
 
   // Add the element to the DOM
   moneyPointBlock.after(newPointBlock);
+
+  $("#tcbf-block").tooltip({
+    open: (event, ui) => {
+      console.log('opening');
+    }
+  });
 }
 
-const apiKey = GM_getValue('apikey');
-
-if (!apiKey) {
-  showAPIInput();
-} else {
+function main(apiKey) {
   // Initialize torn api
   const api = new TornAPI(apiKey);
   api.user().then((userData) => {
@@ -119,4 +127,12 @@ if (!apiKey) {
   }).catch((err) => {
     console.error(err);
   });
+}
+
+const apiKey = GM_getValue('apikey');
+
+if (!apiKey) {
+  showAPIInput();
+} else {
+  main(apiKey);
 }
