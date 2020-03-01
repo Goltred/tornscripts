@@ -47,6 +47,49 @@ class TornAPI {
   }
 }
 
+class Faction {
+  static parseAnnouncement() {
+    const div = $(".cont-gray10");
+    if (div.length > 0) {
+      const spans = div.find("a[href*='profiles.php'] > span");
+      const ids = []
+      spans.each((idx, span) => {
+        // Check if the span text is role-banker
+        if ($(span).text().trim().toLowerCase() === 'role-banker') {
+          // get the profile id from the parent a tag
+          const match = /XID=(?<id>\d+)/g.exec($(span).parent().attr('href'));
+          if (match.length > 0) ids.push(match.groups.id);
+        }
+      });
+      GM_setValue('bankers', ids);
+    }
+  }
+
+  static async getBankersHTML(tornApi) {
+    const bankers = GM_getValue('bankers');
+    const html = ['<p>Online Bankers:</p>'];
+    if (bankers) {
+      // Get members from the faction API
+      const data = await tornApi.faction('basic');
+      const { members } = data;
+
+      // Filter based on status
+      const onlineBankers = bankers.filter((id) => members[id].last_action.status !== 'Offline');
+
+      if (onlineBankers.length === 0) {
+        html.push('None :\'(');
+      } else {
+        onlineBankers.forEach((banker) => {
+          const { name, last_action } = members[banker];
+          html.push(`<a href="https://www.torn.com/profiles.php?XID=${banker}">${name} (${last_action.status})</a>`);
+        });
+      }
+    }
+
+    return html.join('<br />');
+  }
+}
+
 function showAPIInput() {
   const body = $('body');
 
@@ -78,9 +121,9 @@ function displayFactionMoney(data, userData) {
   const moneySpan = spans.last();
 
   // Move things inside an a element for tooltipping
-  const hoverLink = $('<a href="#" id="tcbf-block"></a>');
-  newPointBlock.append(hoverLink);
-  hoverLink.append(spans);
+  const factionDiv = $('<div id="tcbf-block"></a>');
+  newPointBlock.append(factionDiv);
+  factionDiv.append(spans);
 
   // Update the label and set the default value money
   label.text('Faction:');
@@ -114,19 +157,32 @@ function displayFactionMoney(data, userData) {
   });
 }
 
-function main(apiKey) {
+async function main(apiKey) {
   // Initialize torn api
   const api = new TornAPI(apiKey);
+
   api.user().then((userData) => {
     // Get the donations from the faction
     api.faction('donations').then((facData) => {
       displayFactionMoney(facData, userData);
+
+      // Setup the tooltip
+      $('#tcbf-block').on('mouseenter', async (evt) => {
+        const html = await Faction.getBankersHTML(api)
+        showTooltip(evt.pageX, evt.pageY, html);
+        $(".ui-tooltip-content").on('mouseleave', () => $('#white-tooltip').remove());
+      });
+      $('#tcbf-block').on('mouseleave', (evt) => {
+        if (!$(evt.toElement).hasClass('ui-tooltip-content')) $('#white-tooltip').remove(); // Prevents tooltip redrawing if expanded on top of the cursor
+      });
     }).catch((err) => {
       console.error(err);
     });
   }).catch((err) => {
     console.error(err);
   });
+
+  Faction.parseAnnouncement();
 }
 
 const apiKey = GM_getValue('apikey');
