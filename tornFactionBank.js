@@ -9,6 +9,7 @@
 // @match        https://www.torn.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_addStyle
 // ==/UserScript==
 
 class TornAPI {
@@ -51,13 +52,18 @@ class Faction {
   static parseAnnouncement() {
     const div = $(".cont-gray10");
     if (div.length > 0) {
-      const spans = div.find("a[href*='profiles.php'] > span");
+      const imgs = div.find("a[href*='profiles.php'] > img");
       const ids = []
-      spans.each((idx, span) => {
+      imgs.each((idx, img) => {
+        // Get the closest row
+        const row = $(img).closest('tr');
+        const roleTd = $(row).children('td:first');
+        const roleText = $(roleTd).text();
+
         // Check if the span text is role-banker
-        if ($(span).text().trim().toLowerCase() === 'role-banker') {
-          // get the profile id from the parent a tag
-          const match = /XID=(?<id>\d+)/g.exec($(span).parent().attr('href'));
+        if (roleText.trim().toLowerCase() !== 'sergeant') {
+          // get the profile id from the parent a tag of the span
+          const match = /XID=(?<id>\d+)/g.exec($(img).parent().attr('href'));
           if (match.length > 0) ids.push(match.groups.id);
         }
       });
@@ -65,13 +71,11 @@ class Faction {
     }
   }
 
-  static async getBankersHTML(tornApi) {
+  static getBankersHTML(facBasicData) {
     const bankers = GM_getValue('bankers');
-    const html = ['<p>Online Bankers:</p>'];
+    const html = ['<p><strong>Online Bankers:</strong></p>'];
     if (bankers) {
-      // Get members from the faction API
-      const data = await tornApi.faction('basic');
-      const { members } = data;
+      const { members } = facBasicData;
 
       // Filter based on status
       const onlineBankers = bankers.filter((id) => members[id].last_action.status !== 'Offline');
@@ -110,7 +114,7 @@ function tcfb_saveAPI() {
   main(val);
 }
 
-function displayFactionMoney(data, userData) {
+function displayFactionMoney(data, userData, bankers) {
   // Copy the money point block
   const moneyPointBlock = $('#user-money').closest('p[class^="point-block"]');
   const newPointBlock = moneyPointBlock.clone();
@@ -120,8 +124,14 @@ function displayFactionMoney(data, userData) {
   const label = spans.first();
   const moneySpan = spans.last();
 
+  // Add the styling required for tooltip
+  GM_addStyle(".tcbf-tooltipbox { position: relative; display: inline-block; }");
+  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 120px; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 1;");
+  GM_addStyle(".tcbf-tooltipbox:hover .tcbf-tooltiptext { visibility: visible; }");
+
   // Move things inside an a element for tooltipping
-  const factionDiv = $('<div id="tcbf-block"></a>');
+  const factionDiv = $('<div id="tcbf-block" class="tcbf-tooltipbox"></div>');
+  factionDiv.append($(`<span class="tcbf-tooltiptext">${bankers}</span>`));
   newPointBlock.append(factionDiv);
   factionDiv.append(spans);
 
@@ -149,39 +159,20 @@ function displayFactionMoney(data, userData) {
 
   // Add the element to the DOM
   moneyPointBlock.after(newPointBlock);
-
-  $("#tcbf-block").tooltip({
-    open: (event, ui) => {
-      console.log('opening');
-    }
-  });
 }
 
 async function main(apiKey) {
   // Initialize torn api
   const api = new TornAPI(apiKey);
 
-  api.user().then((userData) => {
-    // Get the donations from the faction
-    api.faction('donations').then((facData) => {
-      displayFactionMoney(facData, userData);
+  const [ userData, facData ] = await Promise.all([api.user(), api.faction('basic,donations')]);
 
-      // Setup the tooltip
-      $('#tcbf-block').on('mouseenter', async (evt) => {
-        const html = await Faction.getBankersHTML(api)
-        showTooltip(evt.pageX, evt.pageY, html);
-        $(".ui-tooltip-content").on('mouseleave', () => $('#white-tooltip').remove());
-      });
-      $('#tcbf-block').on('mouseleave', (evt) => {
-        if (!$(evt.toElement).hasClass('ui-tooltip-content')) $('#white-tooltip').remove(); // Prevents tooltip redrawing if expanded on top of the cursor
-      });
-    }).catch((err) => {
-      console.error(err);
-    });
-  }).catch((err) => {
-    console.error(err);
-  });
+  const bankers = Faction.getBankersHTML(facData);
 
+  // Get the donations from the faction
+  displayFactionMoney(facData, userData, bankers);
+
+  // Try to parse a faction announcement if there is one
   Faction.parseAnnouncement();
 }
 
