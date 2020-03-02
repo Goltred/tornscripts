@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.12
+// @version      0.13
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -50,8 +50,10 @@ class TornAPI {
 
 class Faction {
   static parseAnnouncement() {
-    const div = $(".cont-gray10");
-    if (div.length > 0) {
+    const match = /factions.php\?step=your/g.exec(document.URL);
+
+    if (match && match.length > 0) {
+      const div = $(".cont-gray10");
       const imgs = div.find("a[href*='profiles.php'] > img");
       const ids = []
       imgs.each((idx, img) => {
@@ -167,13 +169,13 @@ async function main(apiKey) {
 
   const [ userData, facData ] = await Promise.all([api.user(), api.faction('basic,donations')]);
 
+  // Try to parse a faction announcement if there is one
+  Faction.parseAnnouncement();
+
   const bankers = Faction.getBankersHTML(facData);
 
   // Get the donations from the faction
   displayFactionMoney(facData, userData, bankers);
-
-  // Try to parse a faction announcement if there is one
-  Faction.parseAnnouncement();
 }
 
 const apiKey = GM_getValue('apikey');
