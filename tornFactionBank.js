@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.10
+// @version      0.11
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -126,7 +126,7 @@ function displayFactionMoney(data, userData, bankers) {
 
   // Add the styling required for tooltip
   GM_addStyle(".tcbf-tooltipbox { position: relative; display: inline-block; }");
-  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 120px; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 1;");
+  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 160px; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 1;");
   GM_addStyle(".tcbf-tooltipbox:hover .tcbf-tooltiptext { visibility: visible; }");
 
   // Move things inside an a element for tooltipping
