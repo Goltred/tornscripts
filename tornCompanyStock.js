@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Torn City - Company Stock Calculator
+// @name         Torn City - Company Stock Calculator (TCCSC)
 // @namespace    Goltred.Company
 // @version      0.7
 // @description  Calculate stock reorder based on sales ratio and max storage capacity
@@ -19,12 +19,12 @@ class Logger {
   }
 
   log(...obj) {
-    obj.forEach(o => console.log(o));
+    obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
   }
 
   debug(...obj) {
     if (this.verbosity === 'debug')
-      obj.forEach(o => console.log(o));
+      obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
   }
 }
 const maxStorage = 100000;
