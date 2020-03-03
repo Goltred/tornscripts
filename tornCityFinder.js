@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Item Finder
 // @namespace    Goltred.City.Finder
-// @version      0.2
+// @version      0.3.0
 // @description  Looks for items in the city map and make them visible for easier collection
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js
