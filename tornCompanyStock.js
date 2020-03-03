@@ -38,7 +38,7 @@ logger.debug('menu element found', manageCompany);
 function calculateStock() {
   // Get total stock. Number comes with a ',' which is removed to have a full int
   let totalStock = parseInt($("li.total > div.stock.bold").text().trim().replace(',', ''));
-  logger.debug(`Total stock value', ${totalStock}`);
+  logger.debug(`Total stock value: ${totalStock}`);
 
   let totalSold = parseInt($("li.total > div.sold-daily.bold").text().trim().replace(',', ''));
   logger.debug(`Total sold value: ${totalSold}`);

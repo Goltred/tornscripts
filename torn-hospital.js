@@ -115,6 +115,7 @@ class FactionView {
       let el = $("#war-react-root");
       if (el.length) {
           clearInterval(wallsCheck);
+          $('ul.f-war-list').parent().css('display', 'none');
           el.css("display", "none");
       }
     }, 100);
