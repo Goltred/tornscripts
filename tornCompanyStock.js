@@ -8,22 +8,8 @@
 // @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompanyStock.js
 // @match        https://www.torn.com/companies.php
 // @grant        none
+// @require      https://raw.githubusercontent.com/Goltred/tornscripts/master/classes/Logger.js
 // ==/UserScript==
-
-class Logger {
-  constructor(debug = 'log') {
-    this.verbosity = debug;
-  }
-
-  log(...obj) {
-    obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
-  }
-
-  debug(...obj) {
-    if (this.verbosity === 'debug')
-      obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
-  }
-}
 
 // Globals
 // Let's assume a max storage of 100k since there is no good way of knowing the actual storage.
