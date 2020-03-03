@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 2.0.0
+// @version 2.0.1
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author muffenman and help from Pi77Bull - Modified by Goltred & Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
@@ -16,9 +16,14 @@
 // What does this script do?
 // It hides all members on faction pages that are not in the hospital and displays the hospital time for those who are.
 
+// Setup listeners
+$(document).ajaxComplete((evt, xhr, settings) => {
+  if (/profiles.php\?step=getProfileData/g.exec(settings.url))
+    Profile.revivesEnabled();
+});
+
 class Profile {
   static async revivesEnabled() {
-    // Look for the revive button, and if in disabled state, record to storage
     if ($("a.profile-button.profile-button-revive.cross.disabled").length > 0) {
       const profileId = /XID=(?<id>\d+)#/g.exec(document.URL).groups.id;
       Storage.append(profileId);
@@ -110,11 +115,13 @@ class FactionView {
   }
 
   static async hideWalls() {
+    // There doesn't seem to be an XHR request being sent for this...
     let wallsCheck = setInterval(() => {
       // Hide faction walls
       let el = $("#war-react-root");
       if (el.length) {
           clearInterval(wallsCheck);
+          $('ul.f-war-list').parent().css('display', 'none');
           el.css("display", "none");
       }
     }, 100);
@@ -148,15 +155,13 @@ if (Script.isFactionPage()) {
   const hideDescription = true;
   const threshold = 1; //> Members in the hospital for less than this value in hours will be hidden.
 
-  FactionView.repositionMemberList();
-
-  if (hideWalls) FactionView.hideWalls();
-  if (hideDescription) FactionView.hideDescription();
-  if (hideOffline) FactionView.hideOffline();
-  if (hideIdle) FactionView.hideIdle();
-
   FactionView.changeMembers(threshold);
-  //console.log("Made by muffenman [2002712] and Pi77Bull [2082618] . If you like it, send us a message or a gift either is fine :P \"I love your script!\".");
 
-  // Wait for the war list to load - Modified by Goltred
+  FactionView.repositionMemberList().then(() => {
+    if (hideOffline) FactionView.hideOffline();
+    if (hideIdle) FactionView.hideIdle();
+    if (hideDescription) FactionView.hideDescription();
+    if (hideWalls) FactionView.hideWalls();
+  });
+  //console.log("Made by muffenman [2002712] and Pi77Bull [2082618] . If you like it, send us a message or a gift either is fine :P \"I love your script!\".");
 }
