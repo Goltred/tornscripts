@@ -28,20 +28,6 @@ class Logger {
 // Globals
 // Let's assume a max storage of 100k since there is no good way of knowing the actual storage.
 // This should be changed to reflect the actual storage capacity
-class Logger {
-  constructor(debug = 'log') {
-    this.verbosity = debug;
-  }
-
-  log(...obj) {
-    obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
-  }
-
-  debug(...obj) {
-    if (this.verbosity === 'debug')
-      obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
-  }
-}
 const maxStorage = 100000;
 
 // Create the logger
