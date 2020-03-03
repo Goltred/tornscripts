@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.13
+// @version      0.14.0
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -10,43 +10,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
+// @require      https://raw.githubusercontent.com/Goltred/tornscripts/master/classes/TornAPI.js
 // ==/UserScript==
-
-class TornAPI {
-  constructor(key) {
-    this.baseUrl = 'https://api.torn.com'
-    this.key = key;
-    this.userData = {};
-  }
-
-  async setupUserData() {
-    let data = await this.user();
-    if (data) {
-      this.userData.name = data.name;
-      this.userData.player_id = data.player_id;
-    }
-  }
-
-  async faction(selections = '') {
-    const targetUrl = `${this.baseUrl}/faction/?selections=${selections}&key=${this.key}`;
-    return new Promise((resolve, reject) => {
-      $.get(targetUrl, (data) => {
-        if (data.error) reject(`Torn Faction Bank Script: Error Code: ${data.code} - ${data.error}`);
-        resolve(data);
-      });
-    });
-  }
-
-  async user(selections = '') {
-    const targetUrl = `${this.baseUrl}/user/?selections=${selections ? selections : ''}&key=${this.key}`;
-    return new Promise((resolve) => {
-      $.get(targetUrl, (data) => {
-        if (data.error) reject(`Torn Faction Bank Script: ${data.code} - ${data.error}`);
-        resolve(data);
-      });
-    });
-  }
-}
 
 class Faction {
   static parseAnnouncement() {
@@ -90,6 +55,8 @@ class Faction {
           html.push(`<a href="https://www.torn.com/profiles.php?XID=${banker}">${name} (${last_action.status})</a>`);
         });
       }
+    } else {
+      html.push('No bankers have been detected. Visit your faction page to fetch them from the announcements');
     }
 
     return html.join('<br />');
@@ -128,7 +95,7 @@ function displayFactionMoney(data, userData, bankers) {
 
   // Add the styling required for tooltip
   GM_addStyle(".tcbf-tooltipbox { position: relative; display: inline-block; width: 100% }");
-  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 100%; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 1;");
+  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 100%; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 10;");
   GM_addStyle(".tcbf-tooltipbox:hover .tcbf-tooltiptext { visibility: visible; }");
 
   // Move things inside an a element for tooltipping
