@@ -16,18 +16,18 @@
 // What does this script do?
 // It hides all members on faction pages that are not in the hospital and displays the hospital time for those who are.
 
+// Setup listeners
+$(document).ajaxComplete((evt, xhr, settings) => {
+  if (/profiles.php\?step=getProfileData/g.exec(settings.url))
+    Profile.revivesEnabled();
+});
+
 class Profile {
   static async revivesEnabled() {
-    $(document).ajaxComplete((evt, xhr, settings) => {
-      // Wait for the profile to be loaded
-      if (/profiles.php\?step=getProfileData/g.exec(settings.url)) {
-        // Look for the revive button, and if in disabled state, record to storage
-        if ($("a.profile-button.profile-button-revive.cross.disabled").length > 0) {
-          const profileId = /XID=(?<id>\d+)#/g.exec(document.URL).groups.id;
-          Storage.append(profileId);
-        }
-      }
-    })
+    if ($("a.profile-button.profile-button-revive.cross.disabled").length > 0) {
+      const profileId = /XID=(?<id>\d+)#/g.exec(document.URL).groups.id;
+      Storage.append(profileId);
+    }
   }
 }
 
@@ -115,6 +115,7 @@ class FactionView {
   }
 
   static async hideWalls() {
+    // There doesn't seem to be an XHR request being sent for this...
     let wallsCheck = setInterval(() => {
       // Hide faction walls
       let el = $("#war-react-root");

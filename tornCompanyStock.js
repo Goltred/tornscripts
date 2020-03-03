@@ -11,13 +11,21 @@
 // @require      https://raw.githubusercontent.com/Goltred/tornscripts/master/classes/Logger.js
 // ==/UserScript==
 
+// Setup a listener on ajaxComplete to enter the main logic once the stocks ajax finishes loading
+$(document).ajaxComplete((evt, xhr, settings) => {
+  if (/companies.php\?step=stock/g.exec(settings.url)) {
+    logger.debug('Found stocks element. We are done waiting!');
+    calculateStock();
+  }
+});
+
 // Globals
 // Let's assume a max storage of 100k since there is no good way of knowing the actual storage.
 // This should be changed to reflect the actual storage capacity
 const maxStorage = 100000;
 
 // Create the logger
-const logger = new Logger('debug'); // pass true here to enable debug logging
+const logger = new Logger(); // pass 'debug' here to enable debug logging
 
 let manageCompany = $('.manage-company');
 logger.debug('menu element found', manageCompany);
@@ -69,29 +77,3 @@ function clearText(el) {
   $(clone).find('span').remove()
   return clone.text().trim()
 }
-
-function waitForStock() {
-  logger.debug('Waiting for stocks to appear');
-  $(document).ajaxComplete((evt, xhr, settings) => {
-    if (/companies.php\?step=stock/g.exec(settings.url)) {
-      logger.debug('Found stocks element. We are done waiting!');
-      calculateStock();
-    }
-  });
-}
-
-$(document).ready(() => {
-  // Find the link to the stocks tab
-  let stockLink = manageCompany.find('#ui-id-8');
-  logger.debug(`Attaching waitForStock to ${stockLink} click event`);
-  stockLink.on('click', () => waitForStock());
-
-  let manageTabs = manageCompany.find('#manage-tabs');
-  if (manageTabs.css('display') === 'inline-block') {
-    manageTabs.on('change', (evt) => {
-      if (evt.target.value === 'stock') {
-          waitForStock();
-      }
-    });
-  }
-});

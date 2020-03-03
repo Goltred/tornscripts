@@ -10,7 +10,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
-// @require      https://rawa.githubusercontent.com/Goltred/tornscripts/master/classes/TornAPI.js
+// @require      https://raw.githubusercontent.com/Goltred/tornscripts/master/classes/TornAPI.js
 // ==/UserScript==
 
 class Faction {
@@ -55,6 +55,8 @@ class Faction {
           html.push(`<a href="https://www.torn.com/profiles.php?XID=${banker}">${name} (${last_action.status})</a>`);
         });
       }
+    } else {
+      html.push('No bankers have been detected. Visit your faction page to fetch them from the announcements');
     }
 
     return html.join('<br />');
@@ -93,7 +95,7 @@ function displayFactionMoney(data, userData, bankers) {
 
   // Add the styling required for tooltip
   GM_addStyle(".tcbf-tooltipbox { position: relative; display: inline-block; width: 100% }");
-  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 100%; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 1;");
+  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 100%; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 10;");
   GM_addStyle(".tcbf-tooltipbox:hover .tcbf-tooltiptext { visibility: visible; }");
 
   // Move things inside an a element for tooltipping
