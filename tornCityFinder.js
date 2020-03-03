@@ -12,12 +12,15 @@
 
 // For now, this works the best when fully zoomed out. Also, if the map is already zoomed in, then
 // a refresh will be needed after zooming out since there are no listeners setup on map change
-let wait = setInterval(() => {
-  // Wait for map to load
-  let loader = $('.map-loader-wp');
-  if (loader && loader.css('display') === 'none') {
-    clearInterval(wait);
+$(document).ajaxComplete((evt, xhr, settings) => {
+  if (/city.php\?.*/g.exec(settings.url)) {
+    CityMap.parse();
+  }
+});
 
+
+class CityMap {
+  static parse() {
     // Clear all markers
     let markers = $('.leaflet-marker-icon');
     $.each(markers, (idx, element) => {
@@ -59,4 +62,4 @@ let wait = setInterval(() => {
       });
     });
   }
-}, 100);
+}
