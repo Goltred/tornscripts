@@ -10,9 +10,6 @@
 // @grant        none
 // ==/UserScript==
 
-// Globals
-// Let's assume a max storage of 100k since there is no good way of knowing the actual storage.
-// This should be changed to reflect the actual storage capacity
 class Logger {
   constructor(debug = 'log') {
     this.verbosity = debug;
@@ -27,6 +24,10 @@ class Logger {
       obj.forEach(o => console.log(typeof(o) === 'object' ? o : `TCCSC: ${o}`));
   }
 }
+
+// Globals
+// Let's assume a max storage of 100k since there is no good way of knowing the actual storage.
+// This should be changed to reflect the actual storage capacity
 const maxStorage = 100000;
 
 // Create the logger
@@ -85,13 +86,12 @@ function clearText(el) {
 
 function waitForStock() {
   logger.debug('Waiting for stocks to appear');
-  let waitTimer = setInterval(() => {
-    if ($(manageCompany).find('ul.stock-list')) {
+  $(document).ajaxComplete((evt, xhr, settings) => {
+    if (/companies.php\?step=stock/g.exec(settings.url)) {
       logger.debug('Found stocks element. We are done waiting!');
-      clearInterval(waitTimer);
-      calculateStock()
+      calculateStock();
     }
-  }, 200)
+  });
 }
 
 $(document).ready(() => {
