@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Item Finder
 // @namespace    Goltred.City.Finder
-// @version      0.3.0
+// @version      0.4.0
 // @description  Looks for items in the city map and make them visible for easier collection
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js
@@ -13,14 +13,16 @@
 // For now, this works the best when fully zoomed out. Also, if the map is already zoomed in, then
 // a refresh will be needed after zooming out since there are no listeners setup on map change
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (/city.php\?.*/g.exec(settings.url)) {
-    CityMap.parse();
+  const re = new RegExp('city\\.php.*step=mapData');
+  if (re.exec(settings.url)) {
+    const { territoryUserItems } = JSON.parse(xhr.responseText);
+    CityMap.parse(territoryUserItems);
   }
 });
 
 
 class CityMap {
-  static parse() {
+  static parse(userItems) {
     // Clear all markers
     let markers = $('.leaflet-marker-icon');
     $.each(markers, (idx, element) => {
@@ -34,10 +36,20 @@ class CityMap {
     let pinpoints = $('.user-item-pinpoint');
 
     // Create a new div to contain the list of things found
-    const hrDef = '<hr class="page-head-delimiter m-top10 m-bottom10" />';
+    //decode the userItems
+    const items = JSON.parse(atob(userItems));
     let itemsDiv = $('<div class="cont-gray10"></div>');
     itemsDiv.append('<div class="m-bottom10"><strong><p>Torn City - Item Finder</p></strong></div>');
-    itemsDiv.append(`<p>There are <strong>${pinpoints.length}</strong> items to pickup</p>`);
+    itemsDiv.append(`<p>There are <strong>${pinpoints.length}</strong> items to pickup:</p>`);
+    if (pinpoints.length > 0) {
+      const itemsList = $('<p style="padding-left: 10px;"></p>');
+      const itemsString = [];
+      items.forEach((item) => {
+        itemsString.push(item.title);
+      });
+      itemsList.text(itemsString.join(', '));
+      itemsDiv.append(itemsList);
+    }
     $('#map').after(itemsDiv);
 
     $.each(pinpoints, (idx, element) => {
