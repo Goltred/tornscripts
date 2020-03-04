@@ -13,7 +13,7 @@
 
 // Setup a listener on ajaxComplete to enter the main logic once the stocks ajax finishes loading
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (/companies.php\?step=stock/g.exec(settings.url)) {
+  if (settings.url.includes('companies.php?step=stock')) {
     logger.debug('Found stocks element. We are done waiting!');
     calculateStock();
   }
