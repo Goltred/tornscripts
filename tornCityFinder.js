@@ -13,7 +13,7 @@
 // For now, this works the best when fully zoomed out. Also, if the map is already zoomed in, then
 // a refresh will be needed after zooming out since there are no listeners setup on map change
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (/city.php\?.*/g.exec(settings.url)) {
+  if (settings.url.includes('city.php')) {
     CityMap.parse();
   }
 });

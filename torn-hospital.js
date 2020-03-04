@@ -18,7 +18,7 @@
 
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (/profiles.php\?step=getProfileData/g.exec(settings.url) && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
+  if (settings.url.includes('profiles.php?step=getProfileData') && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
     const { user } = JSON.parse(xhr.responseText);
     Storage.append(user.userID);
   }

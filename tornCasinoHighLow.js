@@ -15,7 +15,7 @@ const logger = new Logger('tornCasinoHighLow');
 
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (/loader.php\?/g.exec(settings.url)) {
+  if (settings.url.includes('loader.php?sid=hiloJson')) {
     const response = new AjaxResponse(xhr);
     const state = new GameState(response);
     GameController.act(state);
