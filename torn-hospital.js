@@ -90,7 +90,7 @@ class FactionView {
 
     $('.member-list > li:contains("Hospital")').each((i, j) => { //loops through every member that is in hospital
       // Hide revives off people
-      const re = new RegExp('XID=(?<id>\d+)');
+      const re = new RegExp('XID=(?<id>\\d+)');
       const idMatch = re.exec($(j).find("a[href*='profiles.php']").attr('href'));
       if (idMatch !== null && Object.keys(disabled).includes(idMatch.groups.id)) {
         $(j).css('display', 'none');
@@ -113,12 +113,12 @@ class FactionView {
     let wallsCheck = setInterval(() => {
       // Hide faction walls
       let el = $("#war-react-root");
-      if (el.length) {
+      if (el.length > 0) {
           clearInterval(wallsCheck);
           $('ul.f-war-list').parent().css('display', 'none');
           el.css("display", "none");
       }
-    }, 100);
+    }, 50);
   }
 }
 
