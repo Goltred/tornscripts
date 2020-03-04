@@ -18,18 +18,11 @@
 
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (/profiles.php\?step=getProfileData/g.exec(settings.url))
-    Profile.revivesEnabled();
-});
-
-class Profile {
-  static async revivesEnabled() {
-    if ($("a.profile-button.profile-button-revive.cross.disabled").length > 0) {
-      const profileId = /XID=(?<id>\d+)#/g.exec(document.URL).groups.id;
-      Storage.append(profileId);
-    }
+  if (/profiles.php\?step=getProfileData/g.exec(settings.url) && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
+    const { user } = JSON.parse(xhr.responseText);
+    Storage.append(user.userID);
   }
-}
+});
 
 class Storage {
   static async append(profileId) {
@@ -97,8 +90,9 @@ class FactionView {
 
     $('.member-list > li:contains("Hospital")').each((i, j) => { //loops through every member that is in hospital
       // Hide revives off people
-      const idMatch = /XID=(?<id>\d+)/g.exec($(j).find("a[href*='profiles.php']").attr('href'));
-      if (idMatch && idMatch.length > 0 && idMatch.groups.id in disabled) {
+      const re = new RegExp('XID=(?<id>\d+)');
+      const idMatch = re.exec($(j).find("a[href*='profiles.php']").attr('href'));
+      if (idMatch !== null && Object.keys(disabled).includes(idMatch.groups.id)) {
         $(j).css('display', 'none');
       } else {
         $(j).find(".days").text($(j).find("#icon15").attr("title").substr(-16, 8)); //displays time that is found in the hospital icon
@@ -128,26 +122,11 @@ class FactionView {
   }
 }
 
-class Script {
-  static isProfilePage() {
-    const match = /profiles.php/g.exec(document.URL);
-    return match && match.length > 0;
-  }
-
-  static isFactionPage() {
-    const match = /factions.php/g.exec(document.URL);
-    return match && match.length > 0;
-  }
-}
-
 // Clear any records of players with disabled revives if the timeout has been met
 Storage.purgeOld();
 
-// Parse player profile
-if (Script.isProfilePage()) Profile.revivesEnabled();
-
 // Modify the faction view
-if (Script.isFactionPage()) {
+if (document.URL.includes('factions.php')) {
   // Configuration values
   const hideWalls = true;
   const hideIdle = true;
