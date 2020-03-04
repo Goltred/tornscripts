@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - High Low Helper
 // @namespace    Goltred.Casino
-// @version      0.1.0
+// @version      0.1.1
 // @description  Calculate odds in casino high low game
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.js
