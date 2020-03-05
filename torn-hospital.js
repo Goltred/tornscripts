@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 2.0.2
+// @version 2.1.0
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author muffenman and help from Pi77Bull - Modified by Goltred & Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
@@ -15,6 +15,15 @@
 
 // What does this script do?
 // It hides all members on faction pages that are not in the hospital and displays the hospital time for those who are.
+
+// Configuration values
+const defaults = {
+  hideWalls: true,
+  hideIdle: true,
+  hideOffline: true,
+  hideDescription: true,
+  threshold: 1 //> Members in the hospital for less than this value in hours will be hidden.
+};
 
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
@@ -61,32 +70,58 @@ class Storage {
       GM_setValue('disabled', filtered);
     }
   }
+
+  static getFilters(defaults) {
+    const filters = GM_getValue('filters');
+
+    if (!filters) {
+      // We need to setup the defaults
+      GM_setValue('filters', defaults);
+      return defaults;
+    }
+
+    return filters;
+  }
+
+  static saveFilters(options) {
+    const modifiedOptions = Object.assign({}, defaults, options);
+    GM_setValue('filters', modifiedOptions);
+  }
 }
+
 class FactionView {
   static async repositionMemberList() {
-    const warList = $('.f-war-list').parent();
+    const membersDiv = $('.f-war-list.m-top10');
     const fInfo = $('.faction-info');
-    fInfo.parent().after(warList);
+    fInfo.parent().after(membersDiv.parent());
   }
 
-  static async hideDescription() {
-    $(".faction-title").css("display", 'none'); //hides faction title
-    $( ".faction-description" ).css("display", "none", "traveling"); //hides faction description
+  static async toggleDescription(hide) {
+    $(".faction-title").css("display", hide ? 'none' : ''); //hides faction title
+    $( ".faction-description" ).css("display", hide ? 'none' : '', "traveling"); //hides faction description
   }
 
-  static async hideOffline() {
-    $('.member-list #icon2').parents("li").hide();
+  static async toggleOffline(hide) {
+    const rows = $('.member-list #icon2').parents("li");
+    if (hide)
+      rows.hide();
+    else
+      rows.show();
   }
 
-  static async hideIdle() {
-    $('.member-list #icon62').parents("li").hide();
+  static async toggleIdle(hide) {
+    const rows = $('.member-list #icon62').parents("li");
+    if (hide)
+      rows.hide();
+    else
+      rows.show();
   }
 
   static async changeMembers(threshold = 1) {
     $('.member-list > li:not(:contains("Hospital"))').css("display", "none"); //hides every member that is not in hospital
 
     // get members that have been detected with revives off
-    const disabled = Storage.get();
+    const disabled = Storage.get() || {};
 
     $('.member-list > li:contains("Hospital")').each((i, j) => { //loops through every member that is in hospital
       // Hide revives off people
@@ -108,17 +143,64 @@ class FactionView {
     });
   }
 
-  static async hideWalls() {
+  static async toggleWalls(hide) {
     // There doesn't seem to be an XHR request being sent for this...
-    let wallsCheck = setInterval(() => {
-      // Hide faction walls
-      let el = $("#war-react-root");
-      if (el.length > 0) {
-          clearInterval(wallsCheck);
-          $('ul.f-war-list').parent().css('display', 'none');
-          el.css("display", "none");
-      }
-    }, 50);
+    // Hide faction walls
+    let el = $("#war-react-root");
+    if (el.length > 0) {
+      $('ul.f-war-list').parent().css('display', hide ? 'none' : '');
+      el.css("display", hide ? "none" : '');
+      return;
+    }
+    setTimeout(() => toggleWalls(hide), 50);
+  }
+
+  static async process(options) {
+    FactionView.changeMembers(options.threshold);
+
+    await FactionView.repositionMemberList();
+    FactionView.toggleOffline(options.hideOffline);
+    FactionView.toggleIdle(options.hideIdle);
+    FactionView.toggleDescription(options.hideDescription);
+    FactionView.toggleWalls(options.hideWalls);
+  }
+}
+
+class HospitalUI {
+  static controls(options) {
+    const membersParent = $('div.f-war-list').parent();
+    const controlsDiv = $(`
+      <div id="tch-controls" class="faction-info-wrap another-faction">
+        <div class="title-black top-round m-top10">Torn Hospital - Filters</div>
+        <div class="faction-info bottom-round" style="padding: 10px;">
+          <div style="width: 70%; float: left;">
+            <input type="checkbox" id="tch-idle" name="tch-idle" ${options.hideIdle ? 'checked': ''}>
+            <label for="tch-idle">Hide Idle</label>
+            <input type="checkbox" id="tch-offline" name="tch-offline" ${options.hideOffline ? 'checked': ''}>
+            <label for="tch-offline">Hide Offline</label>
+            <input type="checkbox" id="tch-description" name="tch-description" ${options.hideDescription ? 'checked': ''}>
+            <label for="tch-description">Hide Description</label>
+            <input type="checkbox" id="tch-walls" name="tch-walls" ${options.hideWalls ? 'checked': ''}>
+            <label for="tch-walls">Hide Walls</label>
+          </div>
+          <div style="float: right;">
+            <button type="button" id="tch-refresh" style=>Refresh</button>
+          </div>
+        </div>
+      </div>
+    `);
+    membersParent.before(controlsDiv);
+    $('#tch-refresh').on('click', () => window.location.reload());
+    $('#tch-idle').on('click', () => FactionView.toggleIdle($('#tch-idle').is(':checked')));
+    $('#tch-offline').on('click', () => FactionView.toggleOffline($('#tch-offline').is(':checked')));
+    $('#tch-description').on('click', () => FactionView.toggleDescription($('#tch-description').is(':checked')));
+    $('#tch-walls').on('click', () => FactionView.toggleWalls($('#tch-walls').is(':checked')));
+    $('#tch-controls .filters').on('click', () => Storage.saveFilters({
+      hideIdle: $('#tch-idle').is(':checked'),
+      hideOffline: $('#tch-offline').is(':checked'),
+      hideDescription: $('#tch-description').is(':checked'),
+      hideWalls: $('#tch-walls').is(':checked')
+    }));
   }
 }
 
@@ -127,20 +209,10 @@ Storage.purgeOld();
 
 // Modify the faction view
 if (document.URL.includes('factions.php')) {
-  // Configuration values
-  const hideWalls = true;
-  const hideIdle = true;
-  const hideOffline = true;
-  const hideDescription = true;
-  const threshold = 1; //> Members in the hospital for less than this value in hours will be hidden.
+  const filters = Storage.getFilters(defaults);
 
-  FactionView.changeMembers(threshold);
+  FactionView.process(filters);
 
-  FactionView.repositionMemberList().then(() => {
-    if (hideOffline) FactionView.hideOffline();
-    if (hideIdle) FactionView.hideIdle();
-    if (hideDescription) FactionView.hideDescription();
-    if (hideWalls) FactionView.hideWalls();
-  });
+  HospitalUI.controls(filters);
   //console.log("Made by muffenman [2002712] and Pi77Bull [2082618] . If you like it, send us a message or a gift either is fine :P \"I love your script!\".");
 }
