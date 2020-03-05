@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.14.1
+// @version      0.14.2
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js
@@ -20,13 +20,11 @@ class Faction {
       const imgs = div.find("a[href*='profiles.php'] > img");
       const ids = []
       imgs.each((idx, img) => {
-        // Get the closest row
-        const row = $(img).closest('tr');
-        const roleTd = $(row).children('td:first');
-        const roleText = $(roleTd).text();
+        // get alt attribute
+        const role = img.alt;
 
         // Check if the span text is role-banker
-        if (roleText.trim().toLowerCase() !== 'sergeant') {
+        if (role.trim().toLowerCase() == 'banker') {
           // get the profile id from the parent a tag of the span
           const re = new RegExp('XID=(?<id>\\d+)');
           const match = re.exec($(img).parent().attr('href'));
