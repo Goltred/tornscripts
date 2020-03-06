@@ -7,25 +7,49 @@ on mobile browsers.
 
 ## Current Scripts
 
-**torn-hospital.js**
+### torn-hospital.js - [Docs](Docs/tornHospital.md) / [Install][tch-raw]
+![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Limited_Support-yellow)
 
-This script modifies faction pages to be able to revive more efficiently. This script was originally
-created by muffenman and help from Pi77Bull.
-Some of its features are:
-* Change days column to display time in hospital instead
-* Move member list to the top of the page (just below faction info)
-* Hide faction description
-* Hide war information
-* Display only online, hospitalized members
-** Display only hospitalized members that have a hosp time of 1+ hour
+Modify faction pages to be able to filter out people and revive more efficiently.
 
-**tornCompany.js**
+### tornCompanyManager.js - [Docs](Docs/torncompanymanager.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompanyManager.js)
+![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-green)
 
-This script prefills company stock input boxes with calculated values depending on the amount of items
-sold for the previous day.
-It calculates the ratio of items sold and then fills the values from the available capacity to purchase.
+Easily manage restocking for your company
 
-**tornCityFinder.js**
+### tornCityFinder.js - [Docs](Docs/torncityfinder.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js)
+![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-green)
 
-This script surfaces the pinpoint markers and images of items found in the city when zoomed in. It's
-functionality is very similar to what DocTorn offers.
+Fast and easy access to items around the city map
+
+### tornFactionBank.ks - [Docs](Docs/tornfactionbank.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js)
+![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Not_Supported-red)
+
+Quickly see the amount of money in your faction bank
+
+### tornCasinoHighLow.js - [Docs](Docs/torncasinohighlow.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.js)
+![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Not_Supported-red)
+
+See the probabilities of choosing the right option in the High-Low game, with some extra assumptions about the game.
+
+## Contributing
+
+If you ever have ideas or would like to contribute with new scripts or fixes, it is as easy as forking
+from the **master** branch and then creating a Pull Request back into it. I will review Pull Requests as
+soon as possible to get meaningful changes in.
+
+**While contributing:**
+* Try to keep in mind the general population. Scripts should be generic as possible so that anyone who might find it can use it
+* Try to test your script on a PC browser and on a Mobile browser
+* Create the corresponding documentation inside the docs folder
+* Modify the README.md file to add an entry to scripts, pointing to the documentation and adding an install link to it
+  * Also add the corresponding badges to indicate if a script is compatible with mobile or not
+* Keep versioning in mind, that way it is easier to get updates from userscript managers
+
+## Reaching out
+
+If you ever find an issue or want to have something new, feel free to file a bug on this repository
+and i'll try to address it as soon as possible.
+If you have ideas or would like to contribute, it is as easily as forking and then creating a pull request
+
+[tch-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
