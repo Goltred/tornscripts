@@ -7,7 +7,7 @@ on mobile browsers.
 
 ## Current Scripts
 
-### torn-hospital.js - [Docs](Docs/tornHospital.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js)
+### torn-hospital.js - [Docs](Docs/tornHospital.md) / [Install][tch-raw]
 ![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Limited_Support-yellow)
 
 Modify faction pages to be able to filter out people and revive more efficiently.
@@ -51,3 +51,5 @@ soon as possible to get meaningful changes in.
 If you ever find an issue or want to have something new, feel free to file a bug on this repository
 and i'll try to address it as soon as possible.
 If you have ideas or would like to contribute, it is as easily as forking and then creating a pull request
+
+[tch-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
