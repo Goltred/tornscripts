@@ -25,7 +25,7 @@ $(document).ajaxComplete((evt, xhr, settings) => {
 const maxStorage = 100000;
 
 // Create the logger
-const logger = new Logger('tornCompanyStock'); // pass 'debug' here to enable debug logging
+const logger = new Logger('tornCompanyManager'); // pass 'debug' here to enable debug logging
 
 let manageCompany = $('.manage-company');
 logger.debug('menu element found', manageCompany);
