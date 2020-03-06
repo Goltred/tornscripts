@@ -4,8 +4,8 @@
 // @version      0.1.1
 // @description  Calculate odds in casino high low game
 // @author       Goltred
-// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.js
-// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.js
+// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.user.js
+// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.user.js
 // @match        https://www.torn.com/loader.php?sid=highlow
 // @grant        none
 // @require      https://raw.githubusercontent.com/Goltred/tornscripts/master/classes/Logger.js

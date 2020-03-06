@@ -12,22 +12,22 @@ on mobile browsers.
 
 Modify faction pages to be able to filter out people and revive more efficiently.
 
-### tornCompanyManager.js - [Docs](Docs/torncompanymanager.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompanyManager.js)
+### tornCompanyManager.js - [Docs](Docs/torncompanymanager.md) / [Install][tcm-raw]
 ![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-green)
 
 Easily manage restocking for your company
 
-### tornCityFinder.js - [Docs](Docs/torncityfinder.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js)
+### tornCityFinder.js - [Docs](Docs/torncityfinder.md) / [Install][tcf-raw]
 ![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-green)
 
 Fast and easy access to items around the city map
 
-### tornFactionBank.ks - [Docs](Docs/tornfactionbank.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.js)
+### tornFactionBank.ks - [Docs](Docs/tornfactionbank.md) / [Install][tcfb-raw]
 ![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Not_Supported-red)
 
 Quickly see the amount of money in your faction bank
 
-### tornCasinoHighLow.js - [Docs](Docs/torncasinohighlow.md) / [Install](https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.js)
+### tornCasinoHighLow.js - [Docs](Docs/torncasinohighlow.md) / [Install][tchl-raw]
 ![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Not_Supported-red)
 
 See the probabilities of choosing the right option in the High-Low game, with some extra assumptions about the game.
@@ -52,4 +52,8 @@ If you ever find an issue or want to have something new, feel free to file a bug
 and i'll try to address it as soon as possible.
 If you have ideas or would like to contribute, it is as easily as forking and then creating a pull request
 
-[tch-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
+[tch-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
+[tcm-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompanyManager.user.js
+[tcf-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.user.js
+[tcfb-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.user.js
+[tchl-raw]: https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCasinoHighLow.user.js
