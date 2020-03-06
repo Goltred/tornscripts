@@ -4,8 +4,8 @@
 // @version      0.4.0
 // @description  Looks for items in the city map and make them visible for easier collection
 // @author       Goltred
-// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js
-// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.js
+// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.user.js
+// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCityFinder.user.js
 // @match        https://www.torn.com/city.php
 // @grant        none
 // ==/UserScript==
