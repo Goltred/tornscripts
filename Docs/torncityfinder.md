@@ -1,7 +1,5 @@
 # torncityfinder.js
 
-![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-green)
-
 ## Description
 
 This script exposes items found on the city map for easier collection. There are two parts to it:
