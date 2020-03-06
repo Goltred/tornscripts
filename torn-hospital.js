@@ -3,7 +3,7 @@
 // @namespace http://tampermonkey.net/
 // @version 2.1.0
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
-// @author muffenman and help from Pi77Bull - Modified by Goltred & Reborn121
+// @author Goltred and Reborn121 - Heavily modified version from muffenman's (help by Pi77Bull)
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
 // @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.js
 // @match https://www.torn.com/factions.php?step=profile&ID=*
@@ -214,5 +214,4 @@ if (document.URL.includes('factions.php')) {
   FactionView.process(filters);
 
   HospitalUI.controls(filters);
-  //console.log("Made by muffenman [2002712] and Pi77Bull [2082618] . If you like it, send us a message or a gift either is fine :P \"I love your script!\".");
 }
