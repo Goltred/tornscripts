@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 2.2.1
+// @version 2.2.2
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121 - Heavily modified version from muffenman's (help by Pi77Bull)
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -102,7 +102,7 @@ class FactionView {
   }
 
   static async toggleOffline(hide) {
-    const rows = $('.member-list').find('[id^=icon2]').parents("li");
+    const rows = $('.member-list').find('[id^=icon2__]').parents("li");
     if (hide)
       rows.hide();
     else
@@ -110,7 +110,7 @@ class FactionView {
   }
 
   static async toggleIdle(hide) {
-    const rows = $('.member-list').find('[id^=icon62]').parents("li");
+    const rows = $('.member-list').find('[id^=icon62__]').parents("li");
     if (hide)
       rows.hide();
     else
@@ -130,7 +130,7 @@ class FactionView {
       if (idMatch !== null && Object.keys(disabled).includes(idMatch.groups.id)) {
         $(j).css('display', 'none');
       } else {
-        $(j).find(".days").text($(j).find("[id^=icon15]").attr("title").substr(-16, 8)); //displays time that is found in the hospital icon
+        $(j).find(".days").text($(j).find("[id^=icon15__]").attr("title").substr(-16, 8)); //displays time that is found in the hospital icon
 
         //> Hide members in the hospital for less than threshold.
         var hours = Number($(j).find("[id^=icon15]").attr("title").substr(-16, 2));
