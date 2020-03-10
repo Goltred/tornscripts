@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.14.2
+// @version      0.14.3
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.user.js
@@ -64,7 +64,7 @@ function showAPIInput() {
   const body = $('body');
 
   const inputBox = $(`
-<div class="info-msg" id="tcfb-apibox" style="position: absolute;top: 0;right: 0;background-color: lightgray; border-style: solid; border-left: 5px solid red;">
+<div class="info-msg" id="tcfb-apibox" style="position: absolute;top: 0;right: 0;background-color: lightgray; border-style: solid; border-left: 5px solid red; z-index: 20">
   <p>Enter your API Key</p>
   <input type="text" id="tcfb-input-api" />
   <button id="tcfb-save-api">Save</button>
@@ -91,8 +91,8 @@ function displayFactionMoney(data, userData, bankers) {
   const moneySpan = spans.last();
 
   // Add the styling required for tooltip
-  GM_addStyle(".tcbf-tooltipbox { position: relative; display: inline-block; width: 100% }");
-  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 100%; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 10;");
+  GM_addStyle(".tcbf-tooltipbox { position: relative; display: inline-block; width: 100%; z-index: 20; }");
+  GM_addStyle(".tcbf-tooltiptext { visibility: hidden; width: 100%; background-color: white; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid black; position: absolute; z-index: 20;");
   GM_addStyle(".tcbf-tooltipbox:hover .tcbf-tooltiptext { visibility: visible; }");
 
   // Move things inside an a element for tooltipping
