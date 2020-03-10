@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 2.2.0
+// @version 2.2.1
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121 - Heavily modified version from muffenman's (help by Pi77Bull)
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -102,7 +102,7 @@ class FactionView {
   }
 
   static async toggleOffline(hide) {
-    const rows = $('.member-list').find('[id^=icon2').parents("li");
+    const rows = $('.member-list').find('[id^=icon2]').parents("li");
     if (hide)
       rows.hide();
     else
@@ -110,7 +110,7 @@ class FactionView {
   }
 
   static async toggleIdle(hide) {
-    const rows = $('.member-list').find('[id^=icon62').parents("li");
+    const rows = $('.member-list').find('[id^=icon62]').parents("li");
     if (hide)
       rows.hide();
     else
