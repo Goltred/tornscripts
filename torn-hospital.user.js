@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Faction Hospital - Edited (Also hides offliners)
 // @namespace http://tampermonkey.net/
-// @version 2.2.2
+// @version 2.3.0
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121 - Heavily modified version from muffenman's (help by Pi77Bull)
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -21,8 +21,13 @@ const defaults = {
   hideWalls: true,
   hideIdle: true,
   hideOffline: true,
+  hideOnline: false,
   hideDescription: true,
-  threshold: 1 //> Members in the hospital for less than this value in hours will be hidden.
+  hideJail: true,
+  hideOkay: true,
+  hideTraveling: true,
+  hideHospitalized: false,
+  threshold: 60 //> Members in the hospital for less than this value in minutes will be hidden.
 };
 
 // Setup listeners
@@ -83,9 +88,58 @@ class Storage {
     return filters;
   }
 
-  static saveFilters(options) {
+  static saveFilters() {
+    const options = Options.getOptions();
     const modifiedOptions = Object.assign({}, defaults, options);
     GM_setValue('filters', modifiedOptions);
+  }
+}
+
+class MemberRow {
+  constructor(rowElement) {
+    this.element = rowElement;
+    this.isIdle = rowElement.find(HospitalUI.selectors.idle).length > 0;
+    this.isOffline = rowElement.find(HospitalUI.selectors.offline).length > 0;
+    this.isOnline = rowElement.find(HospitalUI.selectors.online).length > 0;
+    this.isOkay = rowElement.find(`:contains("${HospitalUI.statuses.okay}")`).length > 0;
+    this.isHospitalized = rowElement.find(`:contains("${HospitalUI.statuses.hospitalized}")`).length > 0;
+    this.isTraveling = rowElement.find(`:contains("${HospitalUI.statuses.traveling}")`).length > 0;
+    this.isInJail = rowElement.find(`:contains("${HospitalUI.statuses.jail}")`).length > 0;
+  }
+
+  get hospitalTime() {
+    const hospTitle = this.element.find(HospitalUI.selectors.hospital).attr("title");
+    const titleElement = $(hospTitle);
+    // get the timer and grab the data-time attribute
+    const seconds = parseInt(titleElement.filter('span.timer').attr('data-time'));
+    if (seconds && seconds >= 0) return {
+      hours: Number(seconds / 60 / 60),
+      minutes: Number(seconds / 60),
+      seconds
+    };
+
+    return undefined;
+  }
+
+  get id() {
+    const re = new RegExp('XID=(?<id>\\d+)');
+    const idMatch = re.exec(this.element.find("a[href*='profiles.php']").attr('href'));
+    if (idMatch !== null) return idMatch.groups.id;
+
+    return undefined;
+  }
+
+  get status() {
+    if (this.isHospitalized) return HospitalUI.statuses.hospitalized;
+    if (this.isTraveling) return HospitalUI.statuses.traveling;
+    if (this.isInJail) return HospitalUI.statuses.jail;
+    if (this.isOkay) return HospitalUI.statuses.okay;
+  }
+
+  get presence() {
+    if (this.isIdle) return 'Idle';
+    if (this.isOffline) return 'Offline';
+    if (this.isOnline) return 'Online';
   }
 }
 
@@ -97,49 +151,73 @@ class FactionView {
   }
 
   static async toggleDescription(hide) {
-    $(".faction-title").css("display", hide ? 'none' : ''); //hides faction title
-    $( ".faction-description" ).css("display", hide ? 'none' : '', "traveling"); //hides faction description
+    if (hide) {
+      $(".faction-title").hide();
+      $(".faction-description").hide();
+      return;
+    }
+
+    $(".faction-title").show();
+    $(".faction-description").show();
   }
 
-  static async toggleOffline(hide) {
-    const rows = $('.member-list').find('[id^=icon2__]').parents("li");
-    if (hide)
-      rows.hide();
-    else
-      rows.show();
+  static async toggleByIcons(iconSelector) {
+    const rows = $('.member-list').find(iconSelector).parents('li');
+    const filter = Options.getFilterArray();
+    rows.each((i, r) => {
+      const row = new MemberRow($(r));
+      if (filter.includes(row.status) || filter.includes(row.presence)) return row.element.hide();
+      row.element.show();
+    });
   }
 
-  static async toggleIdle(hide) {
-    const rows = $('.member-list').find('[id^=icon62__]').parents("li");
-    if (hide)
-      rows.hide();
-    else
-      rows.show();
+  static async toggleByStatus(status) {
+    const rows = $(`.member-list > li:contains("${status}")`);
+    const filter = Options.getFilterArray();
+    rows.each((i, r) => {
+      const row = new MemberRow($(r));
+      if (filter.includes(row.status) || filter.includes(row.presence)) return row.element.hide();
+      row.element.show();
+    });
   }
 
-  static async changeMembers(threshold = 1) {
-    $('.member-list > li:not(:contains("Hospital"))').css("display", "none"); //hides every member that is not in hospital
-
+  static async toggleRevivesOff() {
     // get members that have been detected with revives off
     const disabled = Storage.get() || {};
 
+    if (Object.keys(disabled) > 0) {
+      const filter = Options.getFilterArray();
+
+      const rows = $('.member-list > li:contains("Hospital")');
+      rows.each((i, j) => {
+        const row = new MemberRow($(j));
+        if ((row.id && Object.keys(disabled).includes(row.id)) || (row.hospitalTime && row.hospitalTime.minutes < filterTime) || filter.includes(row.status) || filter.includes(row.presence))
+          return row.element.hide();
+
+        row.element.show();
+      });
+    }
+  }
+
+  static async toggleHospitalByThreshold(threshold = 0) {
+    const rows = $('.member-list > li:contains("Hospital")');
+    const filter = Options.getFilterArray();
+    const filterOptions = Options.getOptions();
+    const filterTime = filterOptions.hideThreshold || threshold;
+    rows.each((i, j) => { //loops through every member that is in hospital
+      const row = new MemberRow($(j));
+
+      if ((row.hospitalTime && row.hospitalTime.minutes < filterTime) || filter.includes(row.status) || filter.includes(row.presence))
+        return row.element.hide();
+
+      row.element.show();
+    });
+  }
+
+  static async updateHospitalTime() {
     $('.member-list > li:contains("Hospital")').each((i, j) => { //loops through every member that is in hospital
-      // Hide revives off people
-      const re = new RegExp('XID=(?<id>\\d+)');
-      const idMatch = re.exec($(j).find("a[href*='profiles.php']").attr('href'));
-      if (idMatch !== null && Object.keys(disabled).includes(idMatch.groups.id)) {
-        $(j).css('display', 'none');
-      } else {
-        $(j).find(".days").text($(j).find("[id^=icon15__]").attr("title").substr(-16, 8)); //displays time that is found in the hospital icon
-
-        //> Hide members in the hospital for less than threshold.
-        var hours = Number($(j).find("[id^=icon15]").attr("title").substr(-16, 2));
-        if (hours < threshold) {
-          $(j).css("display", "none");
-        }
-
-        $(".title .days").text("Time"); //changes Days column title to "Time"
-      }
+      const hospTitle = $(j).find("[id^=icon15__]").attr("title");
+      $(j).find(".days").text(hospTitle.substr(-16, 8)); //displays time that is found in the hospital icon
     });
   }
 
@@ -148,25 +226,79 @@ class FactionView {
     // Hide faction walls
     let el = $("#war-react-root");
     if (el.length > 0) {
-      $('ul.f-war-list').parent().css('display', hide ? 'none' : '');
-      el.css("display", hide ? "none" : '');
+      if (hide) {
+        $('ul.f-war-list').parent().hide();
+        el.hide();
+        return;
+      }
+
+      $('ul.f-war-list').parent().show();
+      el.show();
       return;
     }
     setTimeout(() => toggleWalls(hide), 50);
   }
 
   static async process(options) {
-    FactionView.changeMembers(options.threshold);
-
     await FactionView.repositionMemberList();
-    FactionView.toggleOffline(options.hideOffline);
-    FactionView.toggleIdle(options.hideIdle);
+    $(".title .days").text("Days/Time");
+    FactionView.toggleByStatus('Traveling'); // Hide people Traveling
+    FactionView.toggleByStatus('Jail'); // Hide people in Jail
+    FactionView.toggleByStatus('Okay'); // Hide people that are Okay
+    FactionView.toggleByIcons(HospitalUI.selectors.idle);
+    FactionView.toggleByIcons(HospitalUI.selectors.offline);
+    FactionView.toggleHospitalByThreshold(options.hideThreshold);
+    FactionView.updateHospitalTime();
+    //FactionView.toggleRevivesOff(options.hideRevivesOff);
     FactionView.toggleDescription(options.hideDescription);
     FactionView.toggleWalls(options.hideWalls);
   }
 }
 
+class Options {
+  static getOptions() {
+    return {
+      hideIdle: $('#tch-idle').is(':checked'),
+      hideOffline: $('#tch-offline').is(':checked'),
+      hideOnline: $('#tch-online').is(':checked'),
+      hideDescription: $('#tch-description').is(':checked'),
+      hideWalls: $('#tch-walls').is(':checked'),
+      hideTraveling: $('#tch-traveling').is(':checked'),
+      hideJail: $('#tch-jail').is(':checked'),
+      hideOkay: $('#tch-okay').is(':checked'),
+      hideHospitalized: $('#tch-hospitalized').is(':checked'),
+      hideRevivesOff: $('#tch-revoff').is(':checked'),
+      hideThreshold: parseInt($('#tch-threshold').val())
+    };
+  }
+
+  static getFilterArray() {
+    const options = Options.getOptions();
+    const result = [];
+    Object.keys(options).forEach((k) => {
+      if (options[k]) result.push(k.substr(4));
+    });
+
+    return result;
+  }
+}
+
 class HospitalUI {
+  static selectors = {
+    idle: '[id^=icon62__]',
+    offline: '[id^=icon2__]',
+    hospital: '[id^=icon15__]',
+    online: '[id^=icon1__]'
+  };
+
+  static statuses = {
+    okay: 'Okay',
+    hospitalized: 'Hospitalized',
+    jail: 'Jail',
+    traveling: 'Traveling',
+    mugged: 'Mugged'
+  }
+
   static controls(options) {
     const membersParent = $('div.f-war-list').parent();
     const controlsDiv = $(`
@@ -174,14 +306,36 @@ class HospitalUI {
         <div class="title-black top-round m-top10">Torn Hospital - Filters</div>
         <div class="faction-info bottom-round" style="padding: 10px;">
           <div style="width: 70%; float: left;">
-            <input type="checkbox" id="tch-idle" name="tch-idle" ${options.hideIdle ? 'checked': ''}>
-            <label for="tch-idle">Hide Idle</label>
-            <input type="checkbox" id="tch-offline" name="tch-offline" ${options.hideOffline ? 'checked': ''}>
-            <label for="tch-offline">Hide Offline</label>
-            <input type="checkbox" id="tch-description" name="tch-description" ${options.hideDescription ? 'checked': ''}>
-            <label for="tch-description">Hide Description</label>
-            <input type="checkbox" id="tch-walls" name="tch-walls" ${options.hideWalls ? 'checked': ''}>
-            <label for="tch-walls">Hide Walls</label>
+            <p>
+              <input type="checkbox" id="tch-idle" name="tch-idle" ${options.hideIdle ? 'checked': ''}>
+              <label for="tch-idle">Hide Idle</label>
+              <input type="checkbox" id="tch-offline" name="tch-offline" ${options.hideOffline ? 'checked': ''}>
+              <label for="tch-offline">Hide Offline</label>
+              <input type="checkbox" id="tch-online" name="tch-online" ${options.hideOnline ? 'checked': ''}>
+              <label for="tch-online">Hide Online</label>
+            </p>
+            <p>
+              <label for="tch-threshold">Hospital Time Threshold (minutes)</label>
+              <input type="number" id="tch-threshold" name="tch-threshold" value="${options.hideThreshold}">
+            </p>
+            <p>
+              <input type="checkbox" id="tch-traveling" name="tch-traveling" ${options.hideTraveling ? 'checked': ''}>
+              <label for="tch-traveling">Hide Traveling</label>
+              <input type="checkbox" id="tch-jail" name="tch-jail" ${options.hideJail ? 'checked': ''}>
+              <label for="tch-jail">Hide Jailed</label>
+              <input type="checkbox" id="tch-okay" name="tch-okay" ${options.hideOkay ? 'checked': ''}>
+              <label for="tch-okay">Hide Okay</label>
+              <input type="checkbox" id="tch-hospitalized" name="tch-hospitalized" ${options.hideHospitalized ? 'checked': ''}>
+              <label for="tch-hospitalized">Hide Hospitalized</label>
+            </p>
+            <p>
+              <input type="checkbox" id="tch-description" name="tch-description" ${options.hideDescription ? 'checked': ''}>
+              <label for="tch-description">Hide Description</label>
+              <input type="checkbox" id="tch-walls" name="tch-walls" ${options.hideWalls ? 'checked': ''}>
+              <label for="tch-walls">Hide Walls</label>
+              <input type="checkbox" id="tch-revoff" name="tch-revoff" ${options.hideRevivesOff ? 'checked': ''}>
+              <label for="tch-revoff">Hide Revives Off</label>
+            </p>
           </div>
           <div style="float: right;">
             <button type="button" id="tch-refresh" style=>Refresh</button>
@@ -191,16 +345,19 @@ class HospitalUI {
     `);
     membersParent.before(controlsDiv);
     $('#tch-refresh').on('click', () => window.location.reload());
-    $('#tch-idle').on('click', () => FactionView.toggleIdle($('#tch-idle').is(':checked')));
-    $('#tch-offline').on('click', () => FactionView.toggleOffline($('#tch-offline').is(':checked')));
+    $('#tch-idle').on('click', () => FactionView.toggleByIcons(HospitalUI.selectors.idle));
+    $('#tch-offline').on('click', () => FactionView.toggleByIcons(HospitalUI.selectors.offline));
+    $('#tch-online').on('click', () => FactionView.toggleByIcons(HospitalUI.selectors.online));
     $('#tch-description').on('click', () => FactionView.toggleDescription($('#tch-description').is(':checked')));
     $('#tch-walls').on('click', () => FactionView.toggleWalls($('#tch-walls').is(':checked')));
-    $('#tch-controls .filters').on('click', () => Storage.saveFilters({
-      hideIdle: $('#tch-idle').is(':checked'),
-      hideOffline: $('#tch-offline').is(':checked'),
-      hideDescription: $('#tch-description').is(':checked'),
-      hideWalls: $('#tch-walls').is(':checked')
-    }));
+    $('#tch-traveling').on('click', () => FactionView.toggleByStatus('Traveling'));
+    $('#tch-jail').on('click', () => FactionView.toggleByStatus('Jail'));
+    $('#tch-okay').on('click', () => FactionView.toggleByStatus('Okay'));
+    $('#tch-hospitalized').on('click', () => FactionView.toggleByStatus('Hospitalized'));
+    $('#tch-threshold').on('keyup', () => FactionView.toggleHospitalByThreshold());
+    $('#tch-threshold').on('blur', () => Storage.saveFilters());
+    $('#tch-revoff').on('click', () => FactionView.toggleRevivesOff());
+    $('#tch-controls').on('click', () => Storage.saveFilters());
   }
 }
 
@@ -212,6 +369,5 @@ if (document.URL.includes('factions.php')) {
   const filters = Storage.getFilters(defaults);
 
   FactionView.process(filters);
-
   HospitalUI.controls(filters);
 }
