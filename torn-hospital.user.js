@@ -26,7 +26,7 @@ const defaults = {
   hideJail: true,
   hideOkay: true,
   hideTraveling: true,
-  hideHospitalized: false,
+  hideHospital: false,
   threshold: 60 //> Members in the hospital for less than this value in minutes will be hidden.
 };
 
@@ -102,7 +102,7 @@ class MemberRow {
     this.isOffline = rowElement.find(HospitalUI.selectors.offline).length > 0;
     this.isOnline = rowElement.find(HospitalUI.selectors.online).length > 0;
     this.isOkay = rowElement.find(`:contains("${HospitalUI.statuses.okay}")`).length > 0;
-    this.isHospitalized = rowElement.find(`:contains("${HospitalUI.statuses.hospitalized}")`).length > 0;
+    this.isHospital = rowElement.find(`:contains("${HospitalUI.statuses.hospital}")`).length > 0;
     this.isTraveling = rowElement.find(`:contains("${HospitalUI.statuses.traveling}")`).length > 0;
     this.isInJail = rowElement.find(`:contains("${HospitalUI.statuses.jail}")`).length > 0;
   }
@@ -130,7 +130,7 @@ class MemberRow {
   }
 
   get status() {
-    if (this.isHospitalized) return HospitalUI.statuses.hospitalized;
+    if (this.isHospital) return HospitalUI.statuses.hospital;
     if (this.isTraveling) return HospitalUI.statuses.traveling;
     if (this.isInJail) return HospitalUI.statuses.jail;
     if (this.isOkay) return HospitalUI.statuses.okay;
@@ -266,7 +266,7 @@ class Options {
       hideTraveling: $('#tch-traveling').is(':checked'),
       hideJail: $('#tch-jail').is(':checked'),
       hideOkay: $('#tch-okay').is(':checked'),
-      hideHospitalized: $('#tch-hospitalized').is(':checked'),
+      hideHospital: $('#tch-hospital').is(':checked'),
       hideRevivesOff: $('#tch-revoff').is(':checked'),
       hideThreshold: parseInt($('#tch-threshold').val())
     };
@@ -293,7 +293,7 @@ class HospitalUI {
 
   static statuses = {
     okay: 'Okay',
-    hospitalized: 'Hospitalized',
+    hospital: 'Hospital',
     jail: 'Jail',
     traveling: 'Traveling',
     mugged: 'Mugged'
@@ -325,8 +325,8 @@ class HospitalUI {
               <label for="tch-jail">Hide Jailed</label>
               <input type="checkbox" id="tch-okay" name="tch-okay" ${options.hideOkay ? 'checked': ''}>
               <label for="tch-okay">Hide Okay</label>
-              <input type="checkbox" id="tch-hospitalized" name="tch-hospitalized" ${options.hideHospitalized ? 'checked': ''}>
-              <label for="tch-hospitalized">Hide Hospitalized</label>
+              <input type="checkbox" id="tch-hospital" name="tch-hospital" ${options.hideHospital ? 'checked': ''}>
+              <label for="tch-hospital">Hide Hospital</label>
             </p>
             <p>
               <input type="checkbox" id="tch-description" name="tch-description" ${options.hideDescription ? 'checked': ''}>
@@ -353,7 +353,7 @@ class HospitalUI {
     $('#tch-traveling').on('click', () => FactionView.toggleByStatus('Traveling'));
     $('#tch-jail').on('click', () => FactionView.toggleByStatus('Jail'));
     $('#tch-okay').on('click', () => FactionView.toggleByStatus('Okay'));
-    $('#tch-hospitalized').on('click', () => FactionView.toggleByStatus('Hospitalized'));
+    $('#tch-hospital').on('click', () => FactionView.toggleByStatus('Hospital'));
     $('#tch-threshold').on('keyup', () => FactionView.toggleHospitalByThreshold());
     $('#tch-threshold').on('blur', () => Storage.saveFilters());
     $('#tch-revoff').on('click', () => FactionView.toggleRevivesOff());
