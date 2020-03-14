@@ -104,7 +104,7 @@ class Storage {
   }
 
   static saveFilters() {
-    const options = Options.getOptions();
+    const options = Filter.fromElements();
     const modifiedOptions = Object.assign({}, defaults, options);
     GM_setValue('filters', modifiedOptions);
   }
@@ -156,6 +156,21 @@ class MemberRow {
     if (this.isOffline) return 'Offline';
     if (this.isOnline) return 'Online';
   }
+
+  checkVisibility(filter, disabled) {
+    if (!disabled) {
+      disabled = Storage.get() || {};
+    }
+
+    const fArray = filter.getFilterArray();
+    const filterTime = filter.hideThreshold || defaults.threshold;
+    if ((this.id && Object.keys(disabled).includes(this.id)) || (this.hospitalTime && this.hospitalTime.minutes < filterTime) || fArray.includes(this.status) || fArray.includes(this.presence)) {
+      this.element.hide();
+      return;
+    }
+
+    this.element.show();
+  }
 }
 
 class FactionView {
@@ -178,21 +193,19 @@ class FactionView {
 
   static async toggleByIcons(iconSelector) {
     const rows = $('.member-list').find(iconSelector).parents('li');
-    const filter = Options.getFilterArray();
+    const filter = Filter.fromElements();
     rows.each((i, r) => {
       const row = new MemberRow($(r));
-      if (filter.includes(row.status) || filter.includes(row.presence)) return row.element.hide();
-      row.element.show();
+      row.checkVisibility(filter);
     });
   }
 
   static async toggleByStatus(status) {
     const rows = $(`.member-list > li:contains("${status}")`);
-    const filter = Options.getFilterArray();
+    const filter = Filter.fromElements();
     rows.each((i, r) => {
       const row = new MemberRow($(r));
-      if (filter.includes(row.status) || filter.includes(row.presence)) return row.element.hide();
-      row.element.show();
+      row.checkVisibility(filter);
     });
   }
 
@@ -200,32 +213,23 @@ class FactionView {
     // get members that have been detected with revives off
     const disabled = Storage.get() || {};
 
-    if (Object.keys(disabled) > 0) {
-      const filter = Options.getFilterArray();
+    if (Object.keys(disabled).length > 0) {
+      const filter = Filter.fromElements();
 
       const rows = $('.member-list > li:contains("Hospital")');
       rows.each((i, j) => {
         const row = new MemberRow($(j));
-        if ((row.id && Object.keys(disabled).includes(row.id)) || (row.hospitalTime && row.hospitalTime.minutes < filterTime) || filter.includes(row.status) || filter.includes(row.presence))
-          return row.element.hide();
-
-        row.element.show();
+        row.checkVisibility(filter, disabled);
       });
     }
   }
 
-  static async toggleHospitalByThreshold(threshold = 0) {
+  static async toggleHospitalByThreshold() {
     const rows = $('.member-list > li:contains("Hospital")');
-    const filter = Options.getFilterArray();
-    const filterOptions = Options.getOptions();
-    const filterTime = filterOptions.hideThreshold || threshold;
+    const filter = Filter.fromElements();
     rows.each((i, j) => { //loops through every member that is in hospital
       const row = new MemberRow($(j));
-
-      if ((row.hospitalTime && row.hospitalTime.minutes < filterTime) || filter.includes(row.status) || filter.includes(row.presence))
-        return row.element.hide();
-
-      row.element.show();
+      row.checkVisibility(filter);
     });
   }
 
@@ -262,36 +266,37 @@ class FactionView {
     FactionView.toggleByStatus('Okay'); // Hide people that are Okay
     FactionView.toggleByIcons(selectors.idle);
     FactionView.toggleByIcons(selectors.offline);
-    FactionView.toggleHospitalByThreshold(options.hideThreshold);
+    FactionView.toggleHospitalByThreshold();
     FactionView.updateHospitalTime();
-    //FactionView.toggleRevivesOff(options.hideRevivesOff);
+    FactionView.toggleRevivesOff();
     FactionView.toggleDescription(options.hideDescription);
     FactionView.toggleWalls(options.hideWalls);
   }
 }
 
-class Options {
-  static getOptions() {
-    return {
-      hideIdle: $('#tch-idle').is(':checked'),
-      hideOffline: $('#tch-offline').is(':checked'),
-      hideOnline: $('#tch-online').is(':checked'),
-      hideDescription: $('#tch-description').is(':checked'),
-      hideWalls: $('#tch-walls').is(':checked'),
-      hideTraveling: $('#tch-traveling').is(':checked'),
-      hideJail: $('#tch-jail').is(':checked'),
-      hideOkay: $('#tch-okay').is(':checked'),
-      hideHospital: $('#tch-hospital').is(':checked'),
-      hideRevivesOff: $('#tch-revoff').is(':checked'),
-      hideThreshold: parseInt($('#tch-threshold').val())
-    };
+class Filter {
+  static fromElements() {
+    const options = new Filter();
+
+    options.hideIdle = $('#tch-idle').is(':checked');
+    options.hideOffline = $('#tch-offline').is(':checked');
+    options.hideOnline = $('#tch-online').is(':checked');
+    options.hideDescription = $('#tch-description').is(':checked');
+    options.hideWalls = $('#tch-walls').is(':checked');
+    options.hideTraveling = $('#tch-traveling').is(':checked');
+    options.hideJail = $('#tch-jail').is(':checked');
+    options.hideOkay = $('#tch-okay').is(':checked');
+    options.hideHospital = $('#tch-hospital').is(':checked');
+    options.hideRevivesOff = $('#tch-revoff').is(':checked');
+    options.hideThreshold = parseInt($('#tch-threshold').val());
+
+    return options
   }
 
-  static getFilterArray() {
-    const options = Options.getOptions();
+  getFilterArray() {
     const result = [];
-    Object.keys(options).forEach((k) => {
-      if (options[k]) result.push(k.substr(4));
+    Object.keys(this).forEach((k) => {
+      if (this[k]) result.push(k.substr(4));
     });
 
     return result;
