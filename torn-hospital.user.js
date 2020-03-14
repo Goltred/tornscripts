@@ -30,6 +30,21 @@ const defaults = {
   threshold: 60 //> Members in the hospital for less than this value in minutes will be hidden.
 };
 
+const selectors = {
+  idle: '[id^=icon62__]',
+  offline: '[id^=icon2__]',
+  hospital: '[id^=icon15__]',
+  online: '[id^=icon1__]'
+};
+
+const statuses = {
+  okay: 'Okay',
+  hospital: 'Hospital',
+  jail: 'Jail',
+  traveling: 'Traveling',
+  mugged: 'Mugged'
+}
+
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
   if (settings.url.includes('profiles.php?step=getProfileData') && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
@@ -98,17 +113,17 @@ class Storage {
 class MemberRow {
   constructor(rowElement) {
     this.element = rowElement;
-    this.isIdle = rowElement.find(HospitalUI.selectors.idle).length > 0;
-    this.isOffline = rowElement.find(HospitalUI.selectors.offline).length > 0;
-    this.isOnline = rowElement.find(HospitalUI.selectors.online).length > 0;
-    this.isOkay = rowElement.find(`:contains("${HospitalUI.statuses.okay}")`).length > 0;
-    this.isHospital = rowElement.find(`:contains("${HospitalUI.statuses.hospital}")`).length > 0;
-    this.isTraveling = rowElement.find(`:contains("${HospitalUI.statuses.traveling}")`).length > 0;
-    this.isInJail = rowElement.find(`:contains("${HospitalUI.statuses.jail}")`).length > 0;
+    this.isIdle = rowElement.find(selectors.idle).length > 0;
+    this.isOffline = rowElement.find(selectors.offline).length > 0;
+    this.isOnline = rowElement.find(selectors.online).length > 0;
+    this.isOkay = rowElement.find(`:contains("${statuses.okay}")`).length > 0;
+    this.isHospital = rowElement.find(`:contains("${statuses.hospital}")`).length > 0;
+    this.isTraveling = rowElement.find(`:contains("${statuses.traveling}")`).length > 0;
+    this.isInJail = rowElement.find(`:contains("${statuses.jail}")`).length > 0;
   }
 
   get hospitalTime() {
-    const hospTitle = this.element.find(HospitalUI.selectors.hospital).attr("title");
+    const hospTitle = this.element.find(selectors.hospital).attr("title");
     const titleElement = $(hospTitle);
     // get the timer and grab the data-time attribute
     const seconds = parseInt(titleElement.filter('span.timer').attr('data-time'));
@@ -130,10 +145,10 @@ class MemberRow {
   }
 
   get status() {
-    if (this.isHospital) return HospitalUI.statuses.hospital;
-    if (this.isTraveling) return HospitalUI.statuses.traveling;
-    if (this.isInJail) return HospitalUI.statuses.jail;
-    if (this.isOkay) return HospitalUI.statuses.okay;
+    if (this.isHospital) return statuses.hospital;
+    if (this.isTraveling) return statuses.traveling;
+    if (this.isInJail) return statuses.jail;
+    if (this.isOkay) return statuses.okay;
   }
 
   get presence() {
@@ -245,8 +260,8 @@ class FactionView {
     FactionView.toggleByStatus('Traveling'); // Hide people Traveling
     FactionView.toggleByStatus('Jail'); // Hide people in Jail
     FactionView.toggleByStatus('Okay'); // Hide people that are Okay
-    FactionView.toggleByIcons(HospitalUI.selectors.idle);
-    FactionView.toggleByIcons(HospitalUI.selectors.offline);
+    FactionView.toggleByIcons(selectors.idle);
+    FactionView.toggleByIcons(selectors.offline);
     FactionView.toggleHospitalByThreshold(options.hideThreshold);
     FactionView.updateHospitalTime();
     //FactionView.toggleRevivesOff(options.hideRevivesOff);
@@ -282,23 +297,7 @@ class Options {
     return result;
   }
 }
-
 class HospitalUI {
-  static selectors = {
-    idle: '[id^=icon62__]',
-    offline: '[id^=icon2__]',
-    hospital: '[id^=icon15__]',
-    online: '[id^=icon1__]'
-  };
-
-  static statuses = {
-    okay: 'Okay',
-    hospital: 'Hospital',
-    jail: 'Jail',
-    traveling: 'Traveling',
-    mugged: 'Mugged'
-  }
-
   static controls(options) {
     const membersParent = $('div.f-war-list').parent();
     const controlsDiv = $(`
@@ -306,7 +305,7 @@ class HospitalUI {
         <div class="title-black top-round m-top10">Torn Hospital - Filters</div>
         <div class="faction-info bottom-round" style="padding: 10px;">
           <div style="width: 70%; float: left;">
-            <p>
+          <p>
               <input type="checkbox" id="tch-idle" name="tch-idle" ${options.hideIdle ? 'checked': ''}>
               <label for="tch-idle">Hide Idle</label>
               <input type="checkbox" id="tch-offline" name="tch-offline" ${options.hideOffline ? 'checked': ''}>
@@ -345,9 +344,9 @@ class HospitalUI {
     `);
     membersParent.before(controlsDiv);
     $('#tch-refresh').on('click', () => window.location.reload());
-    $('#tch-idle').on('click', () => FactionView.toggleByIcons(HospitalUI.selectors.idle));
-    $('#tch-offline').on('click', () => FactionView.toggleByIcons(HospitalUI.selectors.offline));
-    $('#tch-online').on('click', () => FactionView.toggleByIcons(HospitalUI.selectors.online));
+    $('#tch-idle').on('click', () => FactionView.toggleByIcons(selectors.idle));
+    $('#tch-offline').on('click', () => FactionView.toggleByIcons(selectors.offline));
+    $('#tch-online').on('click', () => FactionView.toggleByIcons(selectors.online));
     $('#tch-description').on('click', () => FactionView.toggleDescription($('#tch-description').is(':checked')));
     $('#tch-walls').on('click', () => FactionView.toggleWalls($('#tch-walls').is(':checked')));
     $('#tch-traveling').on('click', () => FactionView.toggleByStatus('Traveling'));
