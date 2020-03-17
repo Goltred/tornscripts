@@ -6,7 +6,7 @@
 // @author Goltred and Reborn121 - Heavily modified version from muffenman's (help by Pi77Bull)
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
-// @match https://www.torn.com/factions.php?step=profile&ID=*
+// @match https://www.torn.com/factions.php*
 // @match https://www.torn.com/profiles.php?XID=*
 // @grant GM_setValue
 // @grant GM_getValue
@@ -45,6 +45,8 @@ const statuses = {
   mugged: 'Mugged'
 }
 
+let log;
+
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
   if (settings.url.includes('profiles.php?step=getProfileData') && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
@@ -53,14 +55,34 @@ $(document).ajaxComplete((evt, xhr, settings) => {
   }
 });
 
+class MobileLogWindow {
+  constructor(show = false) {
+    if (show) this.showUI();
+  }
+
+  showUI() {
+    if ($('#tchf-log').length === 0) {
+      const el = $(`
+      <div style="background-color: lightyellow;">
+      <p style="padding-bottom: 5px;"><strong>Torn Hospital Log Window</strong></p>
+      <div id="tchf-log" style="max-height:100px; overflow-y: scroll;"></div>
+      `);
+      $('#factions').before(el);
+    }
+  }
+
+  append(msg) {
+    $('#tchf-log').append(`<p>${msg}</p>`);
+  }
+}
+
 class Storage {
   static async append(profileId) {
     let disabled = GM_getValue('disabled');
     const timestamp = Date.now();
 
     // we add a new record in the format of { 12345: unixtimestamp }
-    if (!disabled)
-      disabled = {}
+    if (!disabled) disabled = {}
 
     disabled[profileId] = timestamp;
     GM_setValue('disabled', disabled);
@@ -75,6 +97,8 @@ class Storage {
       return disabled;
 
     }
+
+    return {}
   }
 
   static purgeOld(timeout = 300000) {
@@ -84,8 +108,7 @@ class Storage {
     if (disabled) {
       const filtered = {};
       Object.keys(disabled).forEach(k => {
-        if (timestamp < disabled[k] + timeout)
-          filtered[k] = disabled[k];
+        if (timestamp < disabled[k] + timeout) filtered[k] = disabled[k];
       });
       GM_setValue('disabled', filtered);
     }
@@ -127,19 +150,21 @@ class MemberRow {
     const titleElement = $(hospTitle);
     // get the timer and grab the data-time attribute
     const seconds = parseInt(titleElement.filter('span.timer').attr('data-time'));
-    if (seconds && seconds >= 0) return {
-      hours: Number(seconds / 60 / 60),
-      minutes: Number(seconds / 60),
-      seconds
-    };
+    if (seconds && seconds >= 0) {
+      return {
+        hours: Number(seconds / 60 / 60),
+        minutes: Number(seconds / 60),
+        seconds
+      };
+    }
 
     return undefined;
   }
 
-  get id() {
-    const re = new RegExp('XID=(?<id>\\d+)');
+  get userid() {
+    const re = new RegExp('XID=(\\d+)');
     const idMatch = re.exec(this.element.find("a[href*='profiles.php']").attr('href'));
-    if (idMatch !== null) return idMatch.groups.id;
+    if (idMatch !== null) return idMatch[1];
 
     return undefined;
   }
@@ -158,13 +183,21 @@ class MemberRow {
   }
 
   checkVisibility(filter, disabled) {
-    if (!disabled) {
-      disabled = Storage.get() || {};
-    }
-
+    log.append(`checking visibility with filter ${JSON.stringify(filter)}`);
     const fArray = filter.getFilterArray();
+    log.append(`Filter array is ${fArray.join(', ')}`);
     const filterTime = filter.hideThreshold || defaults.threshold;
-    if ((this.id && Object.keys(disabled).includes(this.id)) || (this.hospitalTime && this.hospitalTime.minutes < filterTime) || fArray.includes(this.status) || fArray.includes(this.presence)) {
+    log.append(`Filter time is ${filterTime}`);
+    const checks = [
+      false, this.id && Object.keys(disabled).includes(this.id),
+      (this.hospitalTime && this.hospitalTime.minutes < filterTime) || false,
+      fArray.includes(this.status),
+      fArray.includes(this.presence)
+    ];
+
+    log.append(`Check results are: ${checks.join(', ')}`);
+
+    if (checks.some((element) => element === true)) {
       this.element.hide();
       return;
     }
@@ -192,20 +225,22 @@ class FactionView {
   }
 
   static async toggleByIcons(iconSelector) {
-    const rows = $('.member-list').find(iconSelector).parents('li');
+    const rows = FactionView.getRowsWithIcon(iconSelector);
     const filter = Filter.fromElements();
+    const disabled = Storage.get() || {};
     rows.each((i, r) => {
       const row = new MemberRow($(r));
-      row.checkVisibility(filter);
+      row.checkVisibility(filter, disabled);
     });
   }
 
   static async toggleByStatus(status) {
-    const rows = $(`.member-list > li:contains("${status}")`);
+    const rows = FactionView.getRowsWithStatus(status);
     const filter = Filter.fromElements();
+    const disabled = Storage.get() || {};
     rows.each((i, r) => {
       const row = new MemberRow($(r));
-      row.checkVisibility(filter);
+      row.checkVisibility(filter, disabled);
     });
   }
 
@@ -216,7 +251,7 @@ class FactionView {
     if (Object.keys(disabled).length > 0) {
       const filter = Filter.fromElements();
 
-      const rows = $('.member-list > li:contains("Hospital")');
+      const rows = FactionView.getHospitalRows()
       rows.each((i, j) => {
         const row = new MemberRow($(j));
         row.checkVisibility(filter, disabled);
@@ -225,11 +260,12 @@ class FactionView {
   }
 
   static async toggleHospitalByThreshold() {
-    const rows = $('.member-list > li:contains("Hospital")');
+    const rows = FactionView.getHospitalRows();
     const filter = Filter.fromElements();
+    const disabled = Storage.get() || {};
     rows.each((i, j) => { //loops through every member that is in hospital
       const row = new MemberRow($(j));
-      row.checkVisibility(filter);
+      row.checkVisibility(filter, disabled);
     });
   }
 
@@ -238,6 +274,18 @@ class FactionView {
       const hospTitle = $(j).find("[id^=icon15__]").attr("title");
       $(j).find(".days").text(hospTitle.substr(-16, 8)); //displays time that is found in the hospital icon
     });
+  }
+
+  static getHospitalRows() {
+    return $('.member-list > li:contains("Hospital")');
+  }
+
+  static getRowsWithStatus(status) {
+    return $(`.member-list > li:contains("${status}")`);
+  }
+
+  static getRowsWithIcon(iconSelector) {
+    return $('.member-list').find(iconSelector).parents('li');
   }
 
   static async toggleWalls(hide) {
@@ -255,20 +303,26 @@ class FactionView {
       el.show();
       return;
     }
-    setTimeout(() => toggleWalls(hide), 50);
+    setTimeout(() => this.toggleWalls(hide), 50);
   }
 
   static async process(options) {
     await FactionView.repositionMemberList();
     $(".title .days").text("Days/Time");
-    FactionView.toggleByStatus('Traveling'); // Hide people Traveling
-    FactionView.toggleByStatus('Jail'); // Hide people in Jail
-    FactionView.toggleByStatus('Okay'); // Hide people that are Okay
-    FactionView.toggleByIcons(selectors.idle);
-    FactionView.toggleByIcons(selectors.offline);
-    FactionView.toggleHospitalByThreshold();
+
+    // Remove the scrollbar on faction announcement
+    $(".cont-gray10").attr('style', '');
+
+    const rows = $('.member-list > li');
+    const filter = Filter.fromElements();
+    const disabled = Storage.get() || {};
+
+    rows.each((i, j) => {
+      const row = new MemberRow($(j));
+      row.checkVisibility(filter, disabled);
+    });
+
     FactionView.updateHospitalTime();
-    FactionView.toggleRevivesOff();
     FactionView.toggleDescription(options.hideDescription);
     FactionView.toggleWalls(options.hideWalls);
   }
@@ -369,9 +423,14 @@ class HospitalUI {
 Storage.purgeOld();
 
 // Modify the faction view
-if (document.URL.includes('factions.php')) {
+console.log('here');
+if (document.URL.includes('factions.php?step=your')) {
+  // Remove the pesky scrollbar from faction announcement
+  $(".cont-gray10").attr('style', '');
+} else if (document.URL.includes('factions.php')) {
   const filters = Storage.getFilters(defaults);
 
   FactionView.process(filters);
   HospitalUI.controls(filters);
+  log = new MobileLogWindow();
 }
