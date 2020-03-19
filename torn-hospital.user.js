@@ -423,7 +423,6 @@ class HospitalUI {
 Storage.purgeOld();
 
 // Modify the faction view
-console.log('here');
 if (document.URL.includes('factions.php?step=your')) {
   // Remove the pesky scrollbar from faction announcement
   $(".cont-gray10").attr('style', '');
