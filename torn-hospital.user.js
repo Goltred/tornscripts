@@ -226,16 +226,15 @@ class FactionView {
 
   static async toggleByIcons(iconSelector) {
     const rows = FactionView.getRowsWithIcon(iconSelector);
-    const filter = Filter.fromElements();
-    const disabled = Storage.get() || {};
-    rows.each((i, r) => {
-      const row = new MemberRow($(r));
-      row.checkVisibility(filter, disabled);
-    });
+    FactionView.toggleRows(rows);
   }
 
   static async toggleByStatus(status) {
     const rows = FactionView.getRowsWithStatus(status);
+    FactionView.toggleRows(rows);
+  }
+
+  static toggleRows(rows) {
     const filter = Filter.fromElements();
     const disabled = Storage.get() || {};
     rows.each((i, r) => {
@@ -249,24 +248,14 @@ class FactionView {
     const disabled = Storage.get() || {};
 
     if (Object.keys(disabled).length > 0) {
-      const filter = Filter.fromElements();
-
       const rows = FactionView.getHospitalRows()
-      rows.each((i, j) => {
-        const row = new MemberRow($(j));
-        row.checkVisibility(filter, disabled);
-      });
+      FactionView.toggleRows(rows);
     }
   }
 
   static async toggleHospitalByThreshold() {
     const rows = FactionView.getHospitalRows();
-    const filter = Filter.fromElements();
-    const disabled = Storage.get() || {};
-    rows.each((i, j) => { //loops through every member that is in hospital
-      const row = new MemberRow($(j));
-      row.checkVisibility(filter, disabled);
-    });
+    this.toggleRows(rows);
   }
 
   static async updateHospitalTime() {
