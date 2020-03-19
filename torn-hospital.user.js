@@ -27,7 +27,7 @@ const defaults = {
   hideOkay: true,
   hideTraveling: true,
   hideHospital: false,
-  threshold: 60 //> Members in the hospital for less than this value in minutes will be hidden.
+  hideThreshold: 60 //> Members in the hospital for less than this value in minutes will be hidden.
 };
 
 const selectors = {
@@ -186,7 +186,7 @@ class MemberRow {
     log.append(`checking visibility with filter ${JSON.stringify(filter)}`);
     const fArray = filter.getFilterArray();
     log.append(`Filter array is ${fArray.join(', ')}`);
-    const filterTime = filter.hideThreshold || defaults.threshold;
+    const filterTime = filter.hideThreshold || defaults.hideThreshold;
     log.append(`Filter time is ${filterTime}`);
     const checks = [
       false, this.id && Object.keys(disabled).includes(this.id),
