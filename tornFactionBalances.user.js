@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Detailed Faction Balances
 // @namespace    Goltred.Faction
-// @version      1.0.0
+// @version      1.0.1
 // @description  Add extra detail to faction money to know true faction balances and owed money
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBalances.user.js
@@ -35,20 +35,32 @@ function addFactionMoney(userMoney, owed) {
   const total = moneySpan.attr('data-faction-money');
   const factionMoney = total - userMoney;
 
-  // Get the parent div
-  const div = moneySpan.closest('div.info.no-divider');
+  // Check if elements are already there:
+  let factMoneySpan = $('#tcfb-faction');
+  let owedMoneySpan = $('#tcfb-owed');
 
-  // Create the new element
-  const fMoneyDiv = $(`
-<div class="info no-divider" style="padding-left: 3em;">
-  <p><strong>Faction Money:</strong> $${factionMoney.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
-</div>`);
+  if (factMoneySpan.length === 0 || owedMoneySpan.length === 0) {
+    // Get the parent div
+    const div = moneySpan.closest('div.info.no-divider');
 
-  const owedMoneyDiv = $(`
-<div class="info no-divider" style="padding-left: 3em;">
-  <p><strong>Owed Money:</strong> $${owed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
-</div>`);
+      // Create the new element
+    const fMoneyDiv = $(`
+    <div class="info no-divider" style="padding-left: 3em;">
+      <p><strong>Faction Money:</strong> <span id="tcfb-faction"></span></p>
+    </div>`);
 
-  div.after(fMoneyDiv);
-  fMoneyDiv.after(owedMoneyDiv);
+    const owedMoneyDiv = $(`
+    <div class="info no-divider" style="padding-left: 3em;">
+      <p><strong>Owed Money:</strong> <span id="tcfb-owed"></span></p>
+    </div>`);
+
+    div.after(fMoneyDiv);
+    fMoneyDiv.after(owedMoneyDiv);
+
+    factMoneySpan = $('#tcfb-faction');
+    owedMoneySpan = $('#tcfb-owed');
+  }
+
+  factMoneySpan.text(`$${factionMoney.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
+  owedMoneySpan.text(`$${owed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
 }
