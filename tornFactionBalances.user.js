@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Detailed Faction Balances
 // @namespace    Goltred.Faction
-// @version      0.0.1
+// @version      1.0.0
 // @description  Add extra detail to faction money to know true faction balances and owed money
 // @author       Goltred
-// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBalance.user.js
-// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBalance.user.js
+// @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBalances.user.js
+// @downloadURL  https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBalances.user.js
 // @match        https://www.torn.com/factions.php?step=your*
 // ==/UserScript==
 
