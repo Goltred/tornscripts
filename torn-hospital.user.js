@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name Faction Hospital - Edited (Also hides offliners)
-// @namespace http://tampermonkey.net/
-// @version 2.3.0
+// @name Torn Faction Filter
+// @namespace https://github.com/Goltred/tornscripts
+// @version 2.3.2
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
-// @author Goltred and Reborn121 - Heavily modified version from muffenman's (help by Pi77Bull)
+// @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @match https://www.torn.com/factions.php*
@@ -12,9 +12,6 @@
 // @grant GM_getValue
 // @run-at document-end
 // ==/UserScript==
-
-// What does this script do?
-// It hides all members on faction pages that are not in the hospital and displays the hospital time for those who are.
 
 // Configuration values
 const defaults = {
@@ -259,9 +256,9 @@ class FactionView {
   }
 
   static async updateHospitalTime() {
-    $('.member-list > li:contains("Hospital")').each((i, j) => { //loops through every member that is in hospital
+    $('.member-list > li:contains("Hospital")').each((i, j) => {
       const hospTitle = $(j).find("[id^=icon15__]").attr("title");
-      $(j).find(".days").text(hospTitle.substr(-16, 8)); //displays time that is found in the hospital icon
+      $(j).find(".days").text(hospTitle.substr(-16, 8));
     });
   }
 
@@ -298,9 +295,6 @@ class FactionView {
   static async process(options) {
     await FactionView.repositionMemberList();
     $(".title .days").text("Days/Time");
-
-    // Remove the scrollbar on faction announcement
-    $(".cont-gray10").attr('style', '');
 
     const rows = $('.member-list > li');
     const filter = Filter.fromElements();
