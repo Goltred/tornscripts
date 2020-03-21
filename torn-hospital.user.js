@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 2.3.2
+// @version 2.3.3
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -49,6 +49,9 @@ $(document).ajaxComplete((evt, xhr, settings) => {
   if (settings.url.includes('profiles.php?step=getProfileData') && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
     const { user } = JSON.parse(xhr.responseText);
     Storage.append(user.userID);
+  } else if (settings.url.includes('factions.php') && settings.data === 'step=info') {
+    // This is when the faction description is filled for the player faction, info tab
+    FactionView.removeDescriptionScrollbar();
   }
 });
 
@@ -292,9 +295,19 @@ class FactionView {
     setTimeout(() => this.toggleWalls(hide), 50);
   }
 
+  static removeAnnouncementScrollbar() {
+    $(".cont-gray10").attr('style', '');
+  }
+
+  static removeDescriptionScrollbar() {
+    $('div.faction-description').removeClass('faction-description');
+  }
+
   static async process(options) {
     await FactionView.repositionMemberList();
     $(".title .days").text("Days/Time");
+
+    FactionView.removeDescriptionScrollbar();
 
     const rows = $('.member-list > li');
     const filter = Filter.fromElements();
@@ -408,7 +421,7 @@ Storage.purgeOld();
 // Modify the faction view
 if (document.URL.includes('factions.php?step=your')) {
   // Remove the pesky scrollbar from faction announcement
-  $(".cont-gray10").attr('style', '');
+  FactionView.removeAnnouncementScrollbar();
 } else if (document.URL.includes('factions.php')) {
   const filters = Storage.getFilters(defaults);
 
