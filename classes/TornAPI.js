@@ -24,7 +24,7 @@ class TornAPI {
         this.userData = data
 
         // Save the data to avoid calling the api again in the future
-        if (this.storage) this.storage.set(tornAPI.USERDATAKEY, data);
+        if (this.storage) this.storage.set(TornAPI.USERDATAKEY, data);
       }
     }
   }
