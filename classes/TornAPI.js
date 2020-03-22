@@ -1,15 +1,31 @@
 class TornAPI {
-  constructor(key) {
+  static USERDATAKEY = 'TornAPI_userData';
+
+  constructor(key, storage) {
     this.baseUrl = 'https://api.torn.com'
     this.key = key;
     this.userData = {};
+    this.storage = storage;
+  }
+
+  getCachedUserData() {
+    if (this.storage) {
+      return this.storage.get(TornAPI.USERDATAKEY);
+    }
   }
 
   async setupUserData() {
-    let data = await this.user();
-    if (data) {
-      this.userData.name = data.name;
-      this.userData.player_id = data.player_id;
+    const userData = this.getCachedUserData();
+    if (userData) {
+      this.userData = userData;
+    } else {
+      let data = await this.user();
+      if (data) {
+        this.userData = data
+
+        // Save the data to avoid calling the api again in the future
+        if (this.storage) this.storage.set(tornAPI.USERDATAKEY, data);
+      }
     }
   }
 
