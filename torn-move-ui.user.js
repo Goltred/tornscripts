@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Move Torn UI
 // @namespace    https://github.com/Goltred/tornscripts
-// @version      0.1
+// @version      0.2
 // @description  Move the lists after the main content
 // @author       Goltred
 // @match        https://www.torn.com/*
@@ -15,7 +15,7 @@
     // Modify the main container width
     let mc = $('#mainContainer');
     let currWidth = parseInt(mc.css('width'));
-    mc.css('width', currWidth + 170);
+    mc.css('width', currWidth + 250);
 
     // Get the lists block
     let lists = $('h2:contains("Lists")').closest('div[class^="sidebar-block"]');
