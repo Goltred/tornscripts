@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 2.3.4
+// @version 3.0.0
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @match https://www.torn.com/factions.php*
 // @match https://www.torn.com/profiles.php?XID=*
+// @match https://www.torn.com/hospitalview.php*
 // @grant GM_setValue
 // @grant GM_getValue
 // @run-at document-end
@@ -40,7 +41,7 @@ const statuses = {
   jail: 'Jail',
   traveling: 'Traveling',
   mugged: 'Mugged'
-}
+};
 
 let log;
 
@@ -52,8 +53,24 @@ $(document).ajaxComplete((evt, xhr, settings) => {
   } else if (settings.url.includes('factions.php') && settings.data === 'step=info') {
     // This is when the faction description is filled for the player faction, info tab
     FactionView.removeDescriptionScrollbar();
+  } else if (settings.url.includes('revive.php')) {
+    SmartClick.yesClick();
   }
 });
+
+class SmartClick {
+  static yesClick() {
+    // In the hospital, this is a link
+    let yesAction = $('a.action-yes');
+
+    // In the mini profile this is a button...
+    if (yesAction.length == 0)
+      yesAction = $('.confirm-action-yes');
+
+    if (yesAction)
+      yesAction.click();
+  }
+}
 
 class MobileLogWindow {
   constructor(show = false) {
@@ -82,7 +99,7 @@ class Storage {
     const timestamp = Date.now();
 
     // we add a new record in the format of { 12345: unixtimestamp }
-    if (!disabled) disabled = {}
+    if (!disabled) disabled = {};
 
     disabled[profileId] = timestamp;
     GM_setValue('disabled', disabled);
@@ -92,7 +109,7 @@ class Storage {
     const disabled = GM_getValue('disabled');
 
     if (disabled) {
-      if (profileId && profileId in disabled) return disabled[profileId]
+      if (profileId && profileId in disabled) return disabled[profileId];
 
       return disabled;
 
@@ -248,7 +265,7 @@ class FactionView {
     const disabled = Storage.get() || {};
 
     if (Object.keys(disabled).length > 0) {
-      const rows = FactionView.getHospitalRows()
+      const rows = FactionView.getHospitalRows();
       FactionView.toggleRows(rows);
     }
   }
