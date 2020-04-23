@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 3.0.0
+// @version 3.0.1
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -53,24 +53,8 @@ $(document).ajaxComplete((evt, xhr, settings) => {
   } else if (settings.url.includes('factions.php') && settings.data === 'step=info') {
     // This is when the faction description is filled for the player faction, info tab
     FactionView.removeDescriptionScrollbar();
-  } else if (settings.url.includes('revive.php')) {
-    SmartClick.yesClick();
   }
 });
-
-class SmartClick {
-  static yesClick() {
-    // In the hospital, this is a link
-    let yesAction = $('a.action-yes');
-
-    // In the mini profile this is a button...
-    if (yesAction.length == 0)
-      yesAction = $('.confirm-action-yes');
-
-    if (yesAction)
-      yesAction.click();
-  }
-}
 
 class MobileLogWindow {
   constructor(show = false) {
