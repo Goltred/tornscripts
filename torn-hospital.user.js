@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 3.0.2
+// @version 3.0.3
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -190,7 +190,7 @@ class MemberRow {
     const filterTime = filter.hideThreshold || defaults.hideThreshold;
     log.append(`Filter time is ${filterTime}`);
     const checks = [
-      false, this.userid && Object.keys(disabled).includes(this.userid),
+      false, this.userid && Object.keys(disabled).includes(this.userid) && fArray.includes("RevivesOff"),
       (this.hospitalTime && this.hospitalTime.minutes < filterTime) || false,
       fArray.includes(this.status),
       fArray.includes(this.presence)
