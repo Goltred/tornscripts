@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name Google Sheet Trade Tracker
+// @name Torn - Google Sheet Trade Tracker
 // @namespace https://github.com/Goltred/tornscripts
-// @version 0.0.1
+// @version 0.0.2
 // @description Tracks trade information to google sheets
 // @author Goltred
-// @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/trade-track.user.js
-// @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/trade-track.user.js
+// @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/dev/trade-track.user.js
+// @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/dev/trade-track.user.js
 // @match https://www.torn.com/trade.php
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -29,6 +29,7 @@ $(document).ajaxComplete((evt, xhr, settings) => {
                 TornAPI.showAPIInput((apikey) => {
                     main(apiKey, settings.data.includes('step=logview'));
                 });
+                UILogger.log('Please insert your API key');
             } else {
                 // send post = true if this is a finished trade
                 main(apiKey, settings.data.includes('step=logview'));
@@ -48,7 +49,7 @@ function insertUI() {
     // Add the settings controls
     const title = $('<div role="heading" aria-level="5" class="title-black top-round m-top10"><span>Goltred\'s Trade Tracker</span></div>');
     const content = $('<div class="warning-cont cont-gray10 bottom-round t-blue-cont h"></div>');
-    const sellMargin = $(`<div><label for="gtt-sellmargin"><strong>Sale Margin</strong></label><input type="number" step="0.01" id="gtt-sellmargin" class="m-left5" value="${margins.sell || ''}"/></div>`);
+    const sellMargin = $(`<div><label for="gtt-sellmargin"><strong>Sell Margin</strong></label><input type="number" step="0.01" id="gtt-sellmargin" class="m-left5" value="${margins.sell || ''}"/></div>`);
     const buyMargin = $(`<div class="m-top10"><label for="gtt-buymargin"><strong>Buy Margin</strong></label><input type="number" step="0.01" id="gtt-buymargin" class="m-left5" value="${margins.buy || ''}"/></div>`);
     const sheetURL = $(`<div class="m-top10"><label for="gtt-sheet"><strong>WebApp URL</strong></label><input type="text" id="gtt-sheet" class="m-left5" style="width: 50%; display: inline;" value="${webAppURL}" /></div>`);
     const button = $('<div class="m-top10"><button type="button" id="gtt-save-settings">Save</button></div>');
@@ -64,6 +65,13 @@ function insertUI() {
 
     // Attach a listener to the button
     button.on('click', saveSettings);
+
+    // Add the box that will hold the trade summary info
+    $('.trade-cont').removeClass('m-top10');
+    const summaryTitle = $('<div role="heading" aria-level="5" class="title-black top-round m-top10"><span>Trade Summary</span></div>');
+    const summaryContent = $('<div id="gtt-summary" class="trade-cont cont-gray10 h"></div>');
+    $('.trade-cont').before(summaryTitle);
+    summaryTitle.after(summaryContent);
 }
 
 function saveSettings() {
@@ -84,8 +92,14 @@ class Trade {
         this.items = [];
     }
 
-    itemDetails(itemEl, margin) {
+    itemDetails(itemEl, margin, detailHeader) {
         let text = $(itemEl).text();
+
+        // We don't want to process the placeholder
+        if (text.toLowerCase() == 'no items in trade') {
+            return;
+        }
+
         let re = new RegExp(' x(\\d+)');
         let match = re.exec(text);
         let quantity = match == null ? 1 : match[1];
@@ -97,10 +111,6 @@ class Trade {
             let { itemId, item } = foundItem;
             let marketPrice = parseFloat(item.market_value); // market_value comes as string from the api
             let marketTotal = marketPrice * quantity;
-            let buyPrice = marketPrice * margins.buy;
-            let buyTotal = buyPrice * quantity;
-            let sellPrice = marketPrice * margins.sell;
-            let sellTotal = sellPrice * quantity;
             let modifiedPrice = marketPrice * margin;
             let modifiedTotal = modifiedPrice * quantity;
             let itemInfo = {
@@ -115,11 +125,12 @@ class Trade {
 
             $(itemEl).html(`
 ${name} x${quantity}
-<p><strong>Buy</strong> | Price: $${Trade.currencyFormat(buyPrice, 2)} | Total: $${Trade.currencyFormat(buyTotal, 2)}</p>
+<p><strong>${detailHeader}</strong> | Price: $${Trade.currencyFormat(modifiedPrice, 2)} | Total: $${Trade.currencyFormat(modifiedTotal, 2)}</p>
 <p><strong>Market</strong> | Price: $${Trade.currencyFormat(marketPrice, 2)} | Total: $${Trade.currencyFormat(marketTotal, 2)}</p>
-<p><strong>Sell</strong> | Price: $${Trade.currencyFormat(sellPrice, 2)} | Total: $${Trade.currencyFormat(sellTotal, 2)}</p>
 `);
             return itemInfo;
+        } else {
+            console.log(`Error: Could not find item with name ${name}`);
         }
     }
 
@@ -190,24 +201,30 @@ ${name} x${quantity}
             let detailHeader = userPosition == side ? 'Sell' : 'Buy';
             let item = trade.itemDetails(e, itemMargin, detailHeader);
 
-            if (side == includePosition) {
-                trade.items.push(item);
-            }
+            if (item) {
+                if (side == includePosition) {
+                    trade.items.push(item);
+                }
 
-            if (side == 'left') {
-                leftTotals.market += item.marketTotal;
-                leftTotals.modified += item.modifiedTotal;
-            } else {
-                rightTotals.market += item.marketTotal;
-                rightTotals.modified += item.modifiedTotal;
+                if (side == 'left') {
+                    leftTotals.market += item.marketTotal;
+                    leftTotals.modified += item.modifiedTotal;
+                } else {
+                    rightTotals.market += item.marketTotal;
+                    rightTotals.modified += item.modifiedTotal;
+                }
             }
         });
 
-        // Update totals
-        let leftName = $(`.user.left .title-black`).text().replace('\'s items traded', ''); // Remove extra text that we don't need;
-        $(`.user.left .title-black`).text(`${leftName} - $${Trade.currencyFormat(leftTotals.market, 2)} - $${Trade.currencyFormat(leftTotals.modified, 2)}`);
-        let rightName = $(`.user.right .title-black`).text().replace('\'s items traded', ''); // Remove extra text that we don't need;
-        $(`.user.right .title-black`).text(`${rightName} - $${Trade.currencyFormat(rightTotals.market, 2)} - $${Trade.currencyFormat(rightTotals.modified, 2)}`);
+        $('#gtt-summary').html(`
+        <p>Your goods:</p>
+        <p class="m-left5"><strong>Total Market:</strong> $${Trade.currencyFormat(userPosition == 'left' ? leftTotals.market : rightTotals.market, 2) }</p>
+        <p class="m-left5"><strong>Total Modified:</strong> $${Trade.currencyFormat(userPosition == 'left' ? leftTotals.modified : rightTotals.modified, 2) }</p>
+        <hr class="page-head-delimiter m-top10">
+        <p class="m-top10">His goods:</p>
+        <p class="m-left5"><strong>Total Market:</strong> $${Trade.currencyFormat(userPosition == 'left' ? rightTotals.market : leftTotals.market, 2) }</p>
+        <p class="m-left5"><strong>Total Modified:</strong> $${Trade.currencyFormat(userPosition == 'left' ? rightTotals.modified : leftTotals.modified, 2) }</p>
+        `);
 
         UILogger.log('Trade parsing completed');
         return trade;
@@ -253,6 +270,10 @@ async function main(apikey, post = false) {
     let trade = await Trade.fromTradePage(api);
 
     if (post && trade) {
+        if (!webAppURL) {
+            UILogger.log('WebApp URL is not configured. Please set the WebApp URL and try again');
+            return;
+        }
         trade.postData();
     }
 }
