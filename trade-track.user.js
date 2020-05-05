@@ -242,6 +242,8 @@ ${name} x${quantity}
             method: 'GET',
             url: `${webAppURL}?tradeId=${this.tradeID}`,
             onload: function(response) {
+                console.log(response);
+                console.log(response.responseText);
                 let json = JSON.parse(response.responseText);
                 if (json.code == 0) {
                     UILogger.log('Trade does not exist. Sending information to webapp. Please wait until the WebApp reports that it completed ingesting the request');
