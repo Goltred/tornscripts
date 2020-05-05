@@ -1,8 +1,6 @@
 class TornAPI {
-  static USERDATAKEY = 'TornAPI_userData';
-
-  constructor(key, storage) {
-    this.baseUrl = 'https://api.torn.com'
+  constructor(key) {
+    this.baseUrl = 'https://api.torn.com';
     this.key = key;
     this.userData = {};
   }
