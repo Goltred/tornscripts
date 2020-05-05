@@ -10,7 +10,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
-// @require      https://raw.githubusercontent.com/Goltred/tornscripts/dev/classes/TornAPI.js
+// @require      https://raw.githubusercontent.com/Goltred/tornscripts/master/classes/TornAPI.js
 // ==/UserScript==
 
 class Faction {
@@ -120,37 +120,11 @@ function displayFactionMoney(data, userData, bankers) {
   moneyPointBlock.after(newPointBlock);
 }
 
-function cacheFactionData(factionData) {
-  GM_setValue('factionData', {
-    timestamp: new Date.now().getTime(),
-    factionData
-  });
-}
-
-function getCachedFactionData() {
-  return { factionData } = GM_getValue('factionData');
-}
-
-function purgeFactionData(threshold = 600) {
-  const { timestamp } = GM_getValue('factionData');
-
-  if (timestamp && timestamp >= new Date().now().getTime() + threshold) {
-    GM_setValue('factionData', '');
-  }
-}
-
 async function main(apiKey) {
-  const storage = {
-    set: GM_setValue,
-    get: GM_getValue
-  };
-
   // Initialize torn api
-  const api = new TornAPI(apiKey, storage);
+  const api = new TornAPI(apiKey);
 
-  await api.setupUserData();
-
-  const facData = getCachedFactionData() || await api.faction('basic,donations');
+  const [ userData, facData ] = await Promise.all([api.user(), api.faction('basic,donations')]);
 
   // Try to parse a faction announcement if there is one
   Faction.parseAnnouncement();
@@ -158,7 +132,7 @@ async function main(apiKey) {
   const bankers = Faction.getBankersHTML(facData);
 
   // Get the donations from the faction
-  displayFactionMoney(facData, api.userData, bankers);
+  displayFactionMoney(facData, userData, bankers);
 }
 
 const apiKey = GM_getValue('apikey');
