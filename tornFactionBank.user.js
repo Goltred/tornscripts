@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Faction Bank
 // @namespace    Goltred.Faction
-// @version      0.14.4
+// @version      0.14.5
 // @description  Display money on faction bank and online bankers
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionBank.user.js
@@ -58,26 +58,6 @@ class Faction {
 
     return html.join('<br />');
   }
-}
-
-function showAPIInput() {
-  const body = $('body');
-
-  const inputBox = $(`
-<div class="info-msg" id="tcfb-apibox" style="position: absolute;top: 0;right: 0;background-color: lightgray; border-style: solid; border-left: 5px solid red; z-index: 100000">
-  <p>Enter your API Key</p>
-  <input type="text" id="tcfb-input-api" />
-  <button id="tcfb-save-api">Save</button>
-</div>`);
-  body.append(inputBox);
-  $('#tcfb-save-api').on('click', () => tcfb_saveAPI());
-}
-
-function tcfb_saveAPI() {
-  const val = $('#tcfb-input-api').val();
-  GM_setValue('apikey', val);
-  $("#tcfb-apibox").css('display', 'none');
-  main(val);
 }
 
 function displayFactionMoney(data, userData, bankers) {
@@ -158,7 +138,7 @@ async function main(apiKey) {
 const apiKey = GM_getValue('apikey');
 
 if (!apiKey) {
-  showAPIInput();
+  TornAPI.showAPIInput(main);
 } else {
   main(apiKey);
 }

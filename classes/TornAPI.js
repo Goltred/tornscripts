@@ -1,6 +1,6 @@
 class TornAPI {
   constructor(key) {
-    this.baseUrl = 'https://api.torn.com'
+    this.baseUrl = 'https://api.torn.com';
     this.key = key;
     this.userData = {};
   }
