@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 3.0.3
+// @version 3.0.4
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -357,7 +357,7 @@ class HospitalUI {
   static controls(options) {
     const membersParent = $('div.f-war-list').parent();
     const controlsDiv = $(`
-      <div id="tch-controls" class="faction-info-wrap another-faction">
+      <div id="tch-controls" class="faction-info-wrap another-faction" style="display: grid;">
         <div class="title-black top-round m-top10">Torn Hospital - Filters</div>
         <div class="faction-info bottom-round" style="padding: 10px;">
           <div style="width: 70%; float: left;">
