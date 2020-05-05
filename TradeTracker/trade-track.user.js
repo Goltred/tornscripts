@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name Torn - Google Sheet Trade Tracker
 // @namespace https://github.com/Goltred/tornscripts
-// @version 0.0.2
+// @version 1.0.0
 // @description Tracks trade information to google sheets
 // @author Goltred
-// @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/dev/trade-track.user.js
-// @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/dev/trade-track.user.js
+// @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/TradeTracker/trade-track.user.js
+// @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/TradeTracker/trade-track.user.js
 // @match https://www.torn.com/trade.php
 // @grant        GM_setValue
 // @grant        GM_getValue
