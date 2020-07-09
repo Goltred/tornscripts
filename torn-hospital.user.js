@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 3.0.4
+// @version 3.0.5
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -47,7 +47,8 @@ let log;
 
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
-  if (settings.url.includes('profiles.php?step=getProfileData') && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
+  const isProfile = settings.url.includes('profiles.php?step=getProfileData')
+  if (isProfile && ($("a.profile-button.profile-button-revive.cross.disabled").length > 0)) {
     const { user } = JSON.parse(xhr.responseText);
     Storage.append(user.userID);
   } else if (settings.url.includes('factions.php') && settings.data === 'step=info') {
@@ -134,6 +135,16 @@ class Storage {
   }
 }
 
+class Utilities {
+  static getUserIdfromLink(link) {
+    const re = new RegExp('ID=(\\d+)');
+    const idMatch = re.exec(link);
+    if (idMatch !== null) return idMatch[1];
+
+    return undefined;
+  }
+}
+
 class MemberRow {
   constructor(rowElement) {
     this.element = rowElement;
@@ -163,11 +174,7 @@ class MemberRow {
   }
 
   get userid() {
-    const re = new RegExp('XID=(\\d+)');
-    const idMatch = re.exec(this.element.find("a[href*='profiles.php']").attr('href'));
-    if (idMatch !== null) return idMatch[1];
-
-    return undefined;
+    return Utilities.getUserIdfromLink(this.element.find("a[href*='profiles.php']").attr('href'));
   }
 
   get status() {
@@ -247,6 +254,8 @@ class FactionView {
   static async toggleRevivesOff() {
     // get members that have been detected with revives off
     const disabled = Storage.get() || {};
+
+    console.log('click');
 
     if (Object.keys(disabled).length > 0) {
       const rows = FactionView.getHospitalRows();
@@ -416,6 +425,31 @@ class HospitalUI {
   }
 }
 
+function watchMiniProfiles() {
+  const target = $('body')[0];
+  const observer = new MutationObserver((mutations, observer) => {
+    let profileId;
+    let revivesDisabled = false;
+
+    mutations.forEach((record) => {
+      // This is the mutation for the revive button
+      const { classList } = record.target;
+      if (classList.contains('profile-button-revive') && classList.contains('disabled')) {
+        profileId = Utilities.getUserIdfromLink(record.target.href);
+        if (profileId) {
+          console.log(`User with revives disabled. Storing ${profileId}`);
+          Storage.append(profileId);
+        }
+      }
+    });
+  });
+
+  observer.observe(target, {
+    subtree: true,
+    childList: true,
+  });
+}
+
 // Clear any records of players with disabled revives if the timeout has been met
 Storage.purgeOld();
 
@@ -429,4 +463,6 @@ if (document.URL.includes('factions.php?step=your')) {
   FactionView.process(filters);
   HospitalUI.controls(filters);
   log = new MobileLogWindow(false);
+
+  watchMiniProfiles();
 }
