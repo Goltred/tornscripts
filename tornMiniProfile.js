@@ -40,10 +40,11 @@
     }
 
     const rows = $('.member-list > li');
+    const locationSelector = getUserDevice() === 'desktop' ? 'div.status' : 'div.member.icons';
     rows.each((i, j) => {
       // Add a link to the mini profile
-      const link = $(`<a class='miniprofile-${i}'><img src="https://raw.githubusercontent.com/Goltred/tornscripts/master/images/miniprofile.png" style="width: 19px; height: 19px; vertical-align: middle;"></img></a>`);
-      $(j).find('div.status').append(link);
+      const link = $(`<a class='miniprofile-${i}' style="float:right;"><img src="https://raw.githubusercontent.com/Goltred/tornscripts/master/images/miniprofile.png" style="width: 19px; height: 19px; vertical-align: middle;"></img></a>`);
+      $(j).find(locationSelector).append(link);
     });
 
     $('a[class*="miniprofile-"]').on('click', TornMiniProfile.openProfile);
