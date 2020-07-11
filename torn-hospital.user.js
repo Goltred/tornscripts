@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 3.0.5
+// @version 4.0.0
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -43,7 +43,15 @@ const statuses = {
   mugged: 'Mugged'
 };
 
+const ScriptStatus = {
+  InFactionView: 0,
+  InProfile: 1
+}
+
 let log;
+
+let currentScriptStatus = ScriptStatus.InFactionView;
+let keyboardShortcutsEnabled = true;
 
 // Setup listeners
 $(document).ajaxComplete((evt, xhr, settings) => {
@@ -56,6 +64,79 @@ $(document).ajaxComplete((evt, xhr, settings) => {
     FactionView.removeDescriptionScrollbar();
   }
 });
+
+document.onkeydown = (event) => {
+  console.log(event);
+  if (currentScriptStatus == ScriptStatus.InProfile) {
+    let btn;
+    switch(event.code) {
+      case 'KeyR':
+        btn = $('a.profile-button.profile-button-revive.active');
+        break;
+      case 'KeyY':
+        btn = $('button.confirm-action.confirm-action-yes');
+        break;
+      case 'KeyN':
+        btn = $('button.confirm-action.confirm-action-no');
+        break;
+    }
+
+    if (btn) btn[0].click();
+  } else if (currentScriptStatus == ScriptStatus.InFactionView && keyboardShortcutsEnabled) {
+    let rowNumber = 0;
+    if (event.code.includes('Digit')) {
+      rowNumber = parseInt(event.key);
+    }
+
+    if (rowNumber > 0) {
+      // Get the associated visible row
+      const row = $('.member-list > li:visible')[rowNumber - 1];
+      const userNameLink = $(row).find(TornMiniProfile.userNameSelector);
+      let mousedown = new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: userNameLink[0].offsetLeft,
+        clientY: userNameLink[0].offsetTop
+      });
+      userNameLink[0].dispatchEvent(mousedown);
+    }
+  }
+}
+
+class TornMiniProfile {
+  rootElement;
+  rootId = 'profile-mini-root';
+  rootSelector = '#profile-mini-root';
+  static userNameSelector = 'a[href*=\'profiles.php?XID=\']';
+
+  constructor(userID) {
+    this.userID = userID;
+  }
+
+  setRootElement() {
+    if ($(this.rootId)) {
+      this.rootElement = document.createElement('div');
+      this.rootElement.classList.add(this.rootId);
+      this.rootElement.id = this.rootId;
+      $('body').append(this.rootElement);
+    } else {
+      if ($(this.rootSelector).length > 0) {
+        this.rootElement = document.getElementById(this.rootId);
+      }
+    }
+  }
+
+  process(e) {
+    this.setRootElement();
+
+    let props = {
+      userID: this.userID,
+      event: e
+    };
+
+    unsafeWindow.renderMiniProfile(this.rootElement, props);
+  }
+}
 
 class MobileLogWindow {
   constructor(show = false) {
@@ -439,6 +520,20 @@ function watchMiniProfiles() {
         if (profileId) {
           console.log(`User with revives disabled. Storing ${profileId}`);
           Storage.append(profileId);
+        }
+      }
+
+      if (record.addedNodes.length === 1) {
+        const node = record.addedNodes[0];
+        if (node.classList && node.classList.contains('mini-profile-wrapper')) {
+          currentScriptStatus = ScriptStatus.InProfile;
+        }
+      }
+
+      if (record.removedNodes.length === 1) {
+        const node = record.removedNodes[0];
+        if (node.classList && node.classList.contains('mini-profile-wrapper')) {
+          currentScriptStatus = ScriptStatus.InFactionView;
         }
       }
     });
