@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 3.0.4
+// @version 3.0.5
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
 // @author Goltred and Reborn121
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
@@ -32,7 +32,8 @@ const selectors = {
   idle: '[id^=icon62__]',
   offline: '[id^=icon2__]',
   hospital: '[id^=icon15__]',
-  online: '[id^=icon1__]'
+  online: '[id^=icon1__]',
+  memberRow: '.members-list > .table-body'
 };
 
 const statuses = {
@@ -260,22 +261,22 @@ class FactionView {
   }
 
   static async updateHospitalTime() {
-    $('.member-list > li:contains("Hospital")').each((i, j) => {
+    $(' > li:contains("Hospital")').each((i, j) => {
       const hospTitle = $(j).find("[id^=icon15__]").attr("title");
       $(j).find(".days").text(hospTitle.substr(-16, 8));
     });
   }
 
   static getHospitalRows() {
-    return $('.member-list > li:contains("Hospital")');
+    return $(`${selectors.memberRow} > li:contains("Hospital")`);
   }
 
   static getRowsWithStatus(status) {
-    return $(`.member-list > li:contains("${status}")`);
+    return $(`${selectors.memberRow} > li:contains("${status}")`);
   }
 
   static getRowsWithIcon(iconSelector) {
-    return $('.member-list').find(iconSelector).parents('li');
+    return $(selectors.memberRow).find(iconSelector).parents('li');
   }
 
   static async toggleWalls(hide) {
@@ -310,7 +311,7 @@ class FactionView {
 
     FactionView.removeDescriptionScrollbar();
 
-    const rows = $('.member-list > li');
+    const rows = $(`${selectors.memberRow} > li`);
     const filter = Filter.fromElements();
     const disabled = Storage.get() || {};
 
@@ -430,3 +431,5 @@ if (document.URL.includes('factions.php?step=your')) {
   HospitalUI.controls(filters);
   log = new MobileLogWindow(false);
 }
+
+console.log('hi');
