@@ -32,7 +32,8 @@ const selectors = {
   idle: '[id^=icon62__]',
   offline: '[id^=icon2__]',
   hospital: '[id^=icon15__]',
-  online: '[id^=icon1__]'
+  online: '[id^=icon1__]',
+  memberRow: '.members-list > .table-body'
 };
 
 const statuses = {
@@ -350,22 +351,22 @@ class FactionView {
   }
 
   static async updateHospitalTime() {
-    $('.member-list > li:contains("Hospital")').each((i, j) => {
+    $('${selectors.memberRow} > li:contains("Hospital")').each((i, j) => {
       const hospTitle = $(j).find("[id^=icon15__]").attr("title");
       $(j).find(".days").text(hospTitle.substr(-16, 8));
     });
   }
 
   static getHospitalRows() {
-    return $('.member-list > li:contains("Hospital")');
+    return $(`${selectors.memberRow} > li:contains("Hospital")`);
   }
 
   static getRowsWithStatus(status) {
-    return $(`.member-list > li:contains("${status}")`);
+    return $(`${selectors.memberRow} > li:contains("${status}")`);
   }
 
   static getRowsWithIcon(iconSelector) {
-    return $('.member-list').find(iconSelector).parents('li');
+    return $(selectors.memberRow).find(iconSelector).parents('li');
   }
 
   static async toggleWalls(hide) {
@@ -400,7 +401,7 @@ class FactionView {
 
     FactionView.removeDescriptionScrollbar();
 
-    const rows = $('.member-list > li');
+    const rows = $(`${selectors.memberRow} > li`);
     const filter = Filter.fromElements();
     const disabled = Storage.get() || {};
 
