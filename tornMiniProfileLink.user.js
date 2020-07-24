@@ -39,7 +39,7 @@
       }
     }
 
-    const rows = $('.member-list > li');
+    const rows = $('.members-list > .table-body > li');
     const locationSelector = getUserDevice() === 'desktop' ? 'div.status' : 'div.member.icons';
     rows.each((i, j) => {
       // Add a link to the mini profile
