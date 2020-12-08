@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name Torn Faction Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 4.0.0
+// @version 4.0.1
 // @description Shows only faction members that are in the hospital and online, and hides the rest.
-// @author Goltred and Reborn121
+// @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/torn-hospital.user.js
 // @match https://www.torn.com/factions.php*
@@ -67,8 +67,7 @@ $(document).ajaxComplete((evt, xhr, settings) => {
 });
 
 document.onkeydown = (event) => {
-  console.log(event);
-  if (currentScriptStatus == ScriptStatus.InProfile) {
+  if (currentScriptStatus === ScriptStatus.InProfile) {
     let btn;
     switch(event.code) {
       case 'KeyR':
@@ -83,24 +82,24 @@ document.onkeydown = (event) => {
     }
 
     if (btn) btn[0].click();
-  } else if (currentScriptStatus == ScriptStatus.InFactionView && keyboardShortcutsEnabled) {
-    let rowNumber = 0;
-    if (event.code.includes('Digit')) {
-      rowNumber = parseInt(event.key);
+    else $('body').click();
+  } else if (currentScriptStatus === ScriptStatus.InFactionView && keyboardShortcutsEnabled) {
+    if (!event.code.includes('Digit')) {
+      return;
     }
+    let keyNumber = parseInt(event.key);
 
-    if (rowNumber > 0) {
-      // Get the associated visible row
-      const row = $(`${selectors.memberRow} > li:visible`)[rowNumber - 1];
-      const userNameLink = $(row).find(TornMiniProfile.userNameSelector);
-      let mousedown = new MouseEvent('mousedown', {
-        bubbles: true,
-        cancelable: true,
-        clientX: userNameLink[0].offsetLeft,
-        clientY: userNameLink[0].offsetTop
-      });
-      userNameLink[0].dispatchEvent(mousedown);
-    }
+    // Get the associated visible row, transforming 0 to 10 so that we can open the tenth row
+    const rowNumber = keyNumber === 0 ? 10 : keyNumber
+    const row = $(`${selectors.memberRow} > li:visible`)[rowNumber - 1];
+    const userNameLink = $(row).find(TornMiniProfile.userNameSelector);
+    let mousedown = new MouseEvent('mousedown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: userNameLink[0].offsetLeft,
+      clientY: userNameLink[0].offsetTop
+    });
+    userNameLink[0].dispatchEvent(mousedown);
   }
 }
 
