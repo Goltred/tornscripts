@@ -21,12 +21,12 @@ Lastly, two extra features were added to the script to make it easier to revive:
 1. A `Refresh` button is present on the Filter Controls box. This button is a shortcut to refresh the webpage.
 1. Keyboard shortcuts can now be used to open someone's mini profile from Faction View, and then interact with the Revive mechanics in the profile
 
-##Keyboard Shortcuts
+## Keyboard Shortcuts
 
 Since 4.0.0, keyboard shortcuts are enabled to further help your reviving efforts. This feature allows to open mini Profiles for the first
 ten (10) rows of the member list of a faction, and then allows you to interact with the buttons on the opened mini profile.
 
-###Intended flow:
+### Intended flow:
 
 1. Open member list of target faction
 1. Press **1** through **0** to open the desired row mini profile.
