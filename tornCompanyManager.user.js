@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn City - Company Manager
-// @namespace    Goltred.Company
-// @version      0.9.0
+// @namespace    https://github.com/Goltred/tornscripts
+// @version      0.9.1
 // @description  Calculate stock reorder based on sales ratio and max storage capacity
 // @author       Goltred
 // @updateURL    https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCompanyManager.user.js
@@ -70,7 +70,6 @@ function calculateStock(trueStock) {
     logger.debug(`Row #${idx}: Amount to buy is ${amount}`);
 
     // Override only when a value is not set yet
-    console.log(qInput.val())
     if (qInput.val() === '') {
       qInput.val(amount);
       qInput.blur(); // This triggers validation on the field
