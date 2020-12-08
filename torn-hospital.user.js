@@ -91,7 +91,7 @@ document.onkeydown = (event) => {
 
     if (rowNumber > 0) {
       // Get the associated visible row
-      const row = $('.member-list > li:visible')[rowNumber - 1];
+      const row = $(`${selectors.memberRow} > li:visible`)[rowNumber - 1];
       const userNameLink = $(row).find(TornMiniProfile.userNameSelector);
       let mousedown = new MouseEvent('mousedown', {
         bubbles: true,
@@ -351,7 +351,7 @@ class FactionView {
   }
 
   static async updateHospitalTime() {
-    $('${selectors.memberRow} > li:contains("Hospital")').each((i, j) => {
+    $(`${selectors.memberRow} > li:contains("Hospital")`).each((i, j) => {
       const hospTitle = $(j).find("[id^=icon15__]").attr("title");
       $(j).find(".days").text(hospTitle.substr(-16, 8));
     });
