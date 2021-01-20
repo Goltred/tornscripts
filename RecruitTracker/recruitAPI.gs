@@ -1,0 +1,129 @@
+const columns = Object.freeze({
+  id: 0,
+  name: 1,
+  lastScouted: 2,
+  lastDecision: 3
+});
+
+const informationSheetName = "Information";
+
+function createPlayerFromRow(rowValues) {
+  return {
+    id: rowValues[columns.id],
+    name: rowValues[columns.name],
+    lastScouted: rowValues[columns.lastScouted],
+    lastDecision: rowValues[columns.lastDecision]
+  };
+}
+
+function findPlayer(playerId) {
+  const startingRow = 2; // 1st row is header
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(informationSheetName);
+  var columnValues = sheet.getRange(startingRow, 1, sheet.getLastRow()).getValues();
+
+  for(let i = 0; i <= columnValues.length; i++) {
+    if (columnValues[i] == playerId) {
+      const rowNumber = startingRow + i;
+      const rowValues = sheet.getRange(rowNumber, 1, 1, Object.keys(columns).length).getValues()[0];
+
+      return { rowNumber, player: createPlayerFromRow(rowValues) };
+    }
+  }
+
+  return undefined;
+}
+
+function insertPlayerData(sheet, player) {
+  // We insert at the beginning for simplicity / faster glance at latest info
+  sheet.insertRowBefore(2);
+  writePlayerData(sheet, 2, player);
+}
+
+function writePlayerData(sheet, rowNumber, player) {
+  let range = sheet.getRange(rowNumber, 1, 1, Object.keys(columns).length);
+
+  // We want to make sure that players that have been messaged are flagged as such regardless of other new incoming values
+  let rowValues = range.getValues()[0];
+  let currentDecision = range.getValues()[0][columns.lastDecision];
+  if (currentDecision == 'Messaged') player.lastDecision = 'Messaged';
+
+  let values = Object.values(player);
+  range.setValues([values]);
+}
+
+function createOutputResponse(response) {
+  return ContentService.createTextOutput(JSON.stringify(response));
+}
+
+function doGet(request) {
+  let response = {
+    code: 400,
+    msg: 'ERROR - Response not set',
+    object: undefined
+  };
+
+  // request.parameter holds the url args of the request
+  const args = request.parameter;
+  if (Object.keys(args).length == 0) {
+    response.msg = 'ERROR - payload undefined';
+    return createOutputResponse(response);
+  }
+
+  if (!args.playerId) {
+    response.msg = 'ERROR - playerId not sent in payload';
+    return createOutputResponse(response);
+  }
+
+  const search = findPlayer(args.playerId);
+
+  if (!search) {
+    response.code = 404;
+    response.msg = `Player with ID ${args.playerId} not found`;
+
+    return createOutputResponse(response);
+  }
+
+  const { player } = search;
+
+  response.code = 200;
+  response.msg = `Player ${player.name} (${player.id}) has already been ${player.lastDecision}`;
+  response.object = player;
+
+  return createOutputResponse(response);
+}
+
+function doPost(request) {
+  let { contents } = request.postData;
+  let json = JSON.parse(contents);
+  let response = {
+    code: 400,
+    msg: 'ERROR - Response not set'
+  };
+
+  if (Object.keys(json).length == 0) {
+    response.msg = `Invalid json\n${contents}`;
+    response.code = 400;
+    return createOutputResponse(response);
+  }
+
+  if (!json.id) {
+    response.msg = `JSON object does not contain 'id' field\n${contents}`;
+    response.code = 400;
+    return createOutputResponse(response);
+  }
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(informationSheetName);
+  const search = findPlayer(json.id);
+
+  if (search) {
+    writePlayerData(sheet, search.rowNumber, json);
+    response.msg = `Replaced player information from \n${contents}`;
+    response.code = 200;
+  } else {
+    insertPlayerData(sheet, json);
+    response.msg = `Inserted new line from\n${contents}`;
+    response.code = 200;
+  }
+
+  return createOutputResponse(response);
+}
