@@ -101,8 +101,7 @@ class PlayerInfo {
   }
 
   static fromDetailedPage() {
-
-    const player = PlayerInfo.getUserNameId();
+    const player = PlayerInfo.getNameId();
 
     const statSearch = $('div[class^="statName"]');
 
@@ -130,6 +129,7 @@ function setDecisionClickPostEvent() {
   $("#tra-decision > img").on("click", () => {
     copyTextToClipboard('tra-generatedmsg');
     postData(Settings.fromUI().appURL, "Messaged");
+    showMessaged();
   });
 }
 
@@ -297,17 +297,16 @@ function postData(url, decision) {
   });
 }
 
-function getPlayerFromApp(url, playerId) {
+function checkPlayerMessaged(url, playerId) {
   return new Promise((resolve, reject) => {
-    const parametrizedUrl = `${url}?playeId=${playerId}`;
+    const parametrizedUrl = `${url}?playerId=${playerId}`;
     GM_xmlhttpRequest({
       method: 'GET',
       url: parametrizedUrl,
       onload: function(response) {
-        console.log(response);
-        console.log(response.responseText);
         let json = JSON.parse(response.responseText);
         if (json.code == 200) {
+          showMessaged();
           resolve(json.object);
           return;
         }
@@ -336,7 +335,7 @@ async function evaluateRecruit() {
 
   const info = PlayerInfo.getNameId();
 
-  const player = await getPlayerFromApp(settings.appURL, info.id);
+  const player = await checkPlayerMessaged(settings.appURL, info.id);
 
   const watchValues = watchedStats(settings.watchList);
   const results = {};
@@ -360,8 +359,7 @@ async function evaluateRecruit() {
     results[statName] = statValue;
   }
 
-  if (player) {
-    showMessaged();
+  if (player && player.lastDecision === 'Messaged') {
     postData(settings.appURL, "Messaged");
   } else {
     const recruitable = comparisons.every((v) => v);

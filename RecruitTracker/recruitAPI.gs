@@ -100,7 +100,7 @@ function doGet(request) {
   const { player } = search;
 
   response.code = 200;
-  response.msg = `Player ${player.name} (${player.id}) has already been ${player.lastDecision}`;
+  response.msg = `Player ${player.name} (${player.id}) has been found. Last Decision: ${player.lastDecision}`;
   response.object = player;
 
   return createOutputResponse(response);
