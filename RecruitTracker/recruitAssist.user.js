@@ -13,6 +13,9 @@
 // @run-at document-end
 // ==/UserScript==
 
+// Reference to script mutation observer to kill later on
+let observer;
+
 // Default values for the watchlist
 const defaults = {
   watchList: [],
@@ -27,7 +30,6 @@ const decisions = {
 
 // Base URL for images used on the UI
 const imgBaseUrl = 'https://raw.githubusercontent.com/Goltred/tornscripts/master/images';
-const webAppUrl = '';
 
 class Storage {
   static getSettings(defaultSettings) {
@@ -65,23 +67,92 @@ class Settings {
 }
 
 class PlayerInfo {
+  static clearValue(valueElement) {
+    // Text in the detailed page can have:
+    // $ for money
+    // , for thousands
+    // (/d+%) for... something
+    // -- for private info?
+    // d h m s for time
+    const text = $(valueElement).text();
+
+    if (text.startsWith('$')) return parseInt(removeThousandsSep(text.slice(1)));
+    if (text.includes('%')) return parseInt(removeThousandsSep(text.split(' ')[0]));
+    if (text.includes('d') || text == '--') return text;
+
+    return parseInt(removeThousandsSep(text));
+  }
+
+  static getRecruitValue(statElement) {
+    // This is prone to break, but the value we have to compare is the second column to the right of the stat name
+    // also, the value itself is in the middle span... o.O
+    const statValueElement = $(statElement).next().next().children(':nth-child(2)');
+    return PlayerInfo.clearValue(statValueElement);
+  }
+
+  static getNameId() {
+    const playerText = $('div[class^="userLabel"]:nth(1)').text();
+
+    let [name, id] = playerText.split(' ');
+    name = name.slice(1); // remove leading + sign on this element
+    id = id.replace('[', '').replace(']', ''); // remove brackets from id
+
+    return { name, id }
+  }
+
   static fromDetailedPage() {
-    const player = {
-      id: 1,
-      name: 'scriptTest'
-    }
+
+    const player = PlayerInfo.getUserNameId();
+
+    const statSearch = $('div[class^="statName"]');
+
+    statSearch.each((idx, el) => {
+      const statName = $(el).text();
+      const statValue = PlayerInfo.getRecruitValue(el);
+      player[statName] = statValue;
+    });
 
     return player;
   }
 }
 
+function copyTextToClipboard(elementId) {
+  var range = document.createRange();
+  range.selectNode(document.getElementById(elementId));
+  window.getSelection().removeAllRanges(); // clear current selection
+  window.getSelection().addRange(range); // to select text
+  document.execCommand("copy");
+  window.getSelection().removeAllRanges();// to deselect
+}
+
+function setDecisionClickPostEvent() {
+  // Click on recruit copies generated message to clipboard
+  $("#tra-decision > img").on("click", () => {
+    copyTextToClipboard('tra-generatedmsg');
+    postData(Settings.fromUI().appURL, "Messaged");
+  });
+}
+
 function recruitUI(settings) {
-  const boxTitle = $('<div class="title-black top-round m-top10">Torn Recruitment Assistant<button type="button" id="tra-save" style="float: right;">Save</button></div>');
-  $('div.content-title').before(boxTitle);
+  // Main boxes definitions
+  const boxTitle = $('<div class="title-black top-round m-top10">Torn Recruitment Assistant<button type="button" id="tra-save" style="float: right; background-color: lightgray;border: 1px solid black;height: 2em;border-radius: 5px;color: black;"">Save</button></div>');
+  const msgTemplateBody = $('<div style="border-top: 1px solid #3e3e3e; border-bottom: 1px solid #3e3e3e; background-color: #2e2e2e; color: #ccc; padding: 10px;"></div>');
   const appURLBody = $('<div style="border-top: 1px solid #3e3e3e; border-bottom: 1px solid #3e3e3e; background-color: #2e2e2e; color: #ccc; padding: 10px;"></div>');
-  boxTitle.after(appURLBody);
-  appURLBody.append($(`<label for="tra-appurl" style="margin-right: 5px;">Google App URL</label><input type="text" id="tra-appurl" value="${settings.appURL}">`));
   const boxBody = $('<div style="border-top: 1px solid #3e3e3e; background-color: #2e2e2e; color: #ccc; border-radius: 0 0 5px 5px; padding: 10px; display: flex;"></div>');
+
+  // Set the location of stuff
+  $('div.content-title').before(boxTitle);
+  boxTitle.after(appURLBody);
+  appURLBody.after(msgTemplateBody);
+  msgTemplateBody.after(boxBody);
+
+  // Control to save the application URL
+  appURLBody.append($(`<label for="tra-appurl" style="margin-right: 5px; width: 100%;">Google App URL</label><input type="text" id="tra-appurl" value="${settings.appURL}">`));
+
+  // Control for message template
+  msgTemplateBody.append($(`<div><label for="tra-msg">Message Template</label></div><div><textarea id="tra-msg" rows="3" style="width: 100%;">${settings.template}</textarea></div>`));
+
+  // Main controls definitions
   const firstRow = $('<p style="display: contents;"></p>');
   const leftColumn = $('<div style="width: 50%; display: inline-block;"></div>');
 
@@ -94,7 +165,7 @@ function recruitUI(settings) {
 <option value=">">></option>
 </select></div>`));
   leftColumn.append($('<div><label for="tra-statvalue" style="margin-right: 3px;">Value</label><input type="number" id="tra-statvalue"></div>'));
-  leftColumn.append($('<div><button type="button" id="tra-addstat">Add to Watch List</button></div>'));
+  leftColumn.append($('<div><button type="button" id="tra-addstat" style="background-color: lightgray;border: 1px solid black;height: 2em;border-radius: 5px;color: black;">Add to Watch List</button></div>'));
   leftColumn.append($('<hr />'))
   const watchListContainer = $('<div><p style="margin-top: 5px;"><strong>Stats Watch List</strong></p></div>');
   const watchList = $('<select name="watch-list" size="6" id="tra-watchlist"></select>');
@@ -103,18 +174,15 @@ function recruitUI(settings) {
   });
   watchListContainer.append(watchList);
   leftColumn.append(watchListContainer);
-  leftColumn.append('<button type="button" id="tra-removestat">Remove Stat</button>');
+  leftColumn.append('<button type="button" id="tra-removestat" style="background-color: lightgray;border: 1px solid black;height: 2em;border-radius: 5px;color: black;">Remove Stat</button>');
   firstRow.append(leftColumn);
 
   let rightColumn = $('<div style="width: 50%; display: inline-block; padding-left: 10px;"></div>');
-  rightColumn.append($(`<div><label for="tra-msg">Message Template</label></div><div><textarea id="tra-msg" rows="4" style="width: 100%;">${settings.template}</textarea></div>`));
   rightColumn.append($('<div id="tra-decision" style="width: 100%; display: inline-block; vertical-align: top;"></div>'));
   rightColumn.append($('<p><span id="tra-generatedmsg"></span></p>'));
 
   firstRow.append(rightColumn);
   boxBody.append(firstRow);
-
-  appURLBody.after(boxBody);
 
   $('#tra-save').on('click', () => {
     Storage.saveSettings();
@@ -153,14 +221,20 @@ function clearDecision() {
   $('#tra-generatedmsg').empty();
 }
 
+function showMessaged() {
+  clearDecision();
+  const imgName = "messaged.png";
+  $('#tra-decision').append($(`<img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;">`));
+}
+
 function showDecision(recruitable = false, results = {}, template = "") {
   clearDecision();
   const imgName = recruitable ? "recruit.png" : "reject.png";
 
-  $('#tra-decision').append($(`<img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;"></img>`));
+  $('#tra-decision').append($(`<img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;">`));
 
   if (recruitable) {
-    console.log(results);
+    setDecisionClickPostEvent();
     const statLines = [];
     for(let [stat, value] of Object.entries(results)) {
       statLines.push(`  * ${stat} at ${addThousandsSep(value.toString())}`);
@@ -210,7 +284,7 @@ function statSatisfies(statValue, comparison) {
   return false;
 }
 
-function postData(decision) {
+function postData(url, decision) {
   const player = PlayerInfo.fromDetailedPage();
 
   player.lastScouted = Date.now();
@@ -219,15 +293,40 @@ function postData(decision) {
   GM_xmlhttpRequest({
     method: 'POST',
     data: JSON.stringify(player),
-    url: webAppUrl,
-    onload: function (response) {
-      console.log('Recruit info sent. Process completed.');
-      console.log(response);
-    }
+    url
   });
 }
 
-function evaluateRecruit() {
+function getPlayerFromApp(url, playerId) {
+  return new Promise((resolve, reject) => {
+    const parametrizedUrl = `${url}?playeId=${playerId}`;
+    GM_xmlhttpRequest({
+      method: 'GET',
+      url: parametrizedUrl,
+      onload: function(response) {
+        console.log(response);
+        console.log(response.responseText);
+        let json = JSON.parse(response.responseText);
+        if (json.code == 200) {
+          resolve(json.object);
+          return;
+        }
+
+        if (json.code == 404) {
+          resolve(undefined);
+          return;
+        }
+
+        reject(json.msg);
+      },
+      onerror: function(response) {
+        reject(response);
+      }
+    });
+  });
+}
+
+async function evaluateRecruit() {
   const settings = Settings.fromUI();
 
   if (settings.watchList.length == 0) {
@@ -235,14 +334,17 @@ function evaluateRecruit() {
     return;
   }
 
+  const info = PlayerInfo.getNameId();
+
+  const player = await getPlayerFromApp(settings.appURL, info.id);
+
   const watchValues = watchedStats(settings.watchList);
   const results = {};
 
   let comparisons = [];
   for(const [statName, comparison] of Object.entries(watchValues)) {
-
-    const divs = $('div[class^="statName"]');
     let stat;
+    const divs = $('div[class^="scrollArea"]').find('div[class^="statName"]');
     divs.each((idx, el) => {
       if ($(el).text() === statName) {
         stat = el;
@@ -250,27 +352,29 @@ function evaluateRecruit() {
       }
     });
 
-    if (!stat) return;
+    if (stat === undefined) return;
 
-    // This is prone to break, but the value we have to compare is the second column to the right of the stat name
-    // also, the value itself is in the middle span... o.O
-    const statValueElement = $(stat).next().next().children(':nth-child(2)');
-    const statValue = parseInt(removeThousandsSep(statValueElement.text()));
+    const statValue = PlayerInfo.getRecruitValue(stat);
 
     comparisons.push(statSatisfies(statValue, comparison));
     results[statName] = statValue;
   }
 
-  const recruitable = comparisons.every((v) => v);
-  showDecision(recruitable, results, settings.template);
+  if (player) {
+    showMessaged();
+    postData(settings.appURL, "Messaged");
+  } else {
+    const recruitable = comparisons.every((v) => v);
+    showDecision(recruitable, results, settings.template);
 
-  const decision = recruitable ? decisions.recruitable : decisions.rejected;
-  postData(decision);
+    const decision = recruitable ? decisions.recruitable : decisions.rejected;
+    postData(settings.appURL, decision);
+  }
 }
 
-function watchPage() {
+async function watchPage() {
   const target = $('body')[0];
-  const observer = new MutationObserver((mutations, observer) => {
+  observer = new MutationObserver(async (mutations, observer) => {
     let process = false;
     mutations.forEach((record) => {
       if (typeof record.target.className != "string") return;
@@ -282,7 +386,8 @@ function watchPage() {
     // We don't process if a mutation for the stats was not detected
     if (!process) return;
 
-    evaluateRecruit();
+    await evaluateRecruit();
+    observer.disconnect();
   });
 
   observer.observe(target, {
@@ -295,4 +400,6 @@ const settings = Storage.getSettings(defaults);
 
 recruitUI(settings);
 
-watchPage();
+watchPage().catch((e) => {
+  console.log(e);
+});

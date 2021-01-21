@@ -33,6 +33,13 @@ function findPlayer(playerId) {
   return undefined;
 }
 
+function findColumnIdByHeaderValue(sheet, headerValue) {
+  let range = sheet.getRange(1, 1, 1, sheet.getLastColumn());
+
+  let values = range.getValues()[0];
+  return values.findIndex(headerValue);
+}
+
 function insertPlayerData(sheet, player) {
   // We insert at the beginning for simplicity / faster glance at latest info
   sheet.insertRowBefore(2);
@@ -40,15 +47,22 @@ function insertPlayerData(sheet, player) {
 }
 
 function writePlayerData(sheet, rowNumber, player) {
-  let range = sheet.getRange(rowNumber, 1, 1, Object.keys(columns).length);
+  let range = sheet.getRange(rowNumber, 1, 1, sheet.getLastColumn());
 
   // We want to make sure that players that have been messaged are flagged as such regardless of other new incoming values
-  let rowValues = range.getValues()[0];
   let currentDecision = range.getValues()[0][columns.lastDecision];
   if (currentDecision == 'Messaged') player.lastDecision = 'Messaged';
 
-  let values = Object.values(player);
-  range.setValues([values]);
+  let columnHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  for (let i = 0; i < columnHeaders.length; i++) {
+    const header = columnHeaders[i];
+    const v = player[header];
+
+    if (v) {
+      sheet.getRange(rowNumber, i + 1).setValue(v);
+    }
+  }
 }
 
 function createOutputResponse(response) {

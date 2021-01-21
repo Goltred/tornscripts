@@ -55,7 +55,7 @@ the userscript settings
 
 ## Using the userscript
 
-Once you have installed the userscript with your faqvorite manager, you should see the following as "UI" on any trade
+Once you have installed the userscript with your favorite manager, you should see the following as "UI" on any trade
 
 ![UI Image](images/ui.png)
 
