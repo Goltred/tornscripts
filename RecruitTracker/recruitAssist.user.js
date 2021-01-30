@@ -7,6 +7,7 @@
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCombat.user.js
 // @downloadURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCombat.user.js
 // @match https://www.torn.com/personalstats.php?ID*
+// @match https://www.torn.com/messages.php*
 // @grant GM_setValue
 // @grant GM_getValue
 // @grant GM_xmlhttpRequest
@@ -19,7 +20,8 @@ let observer;
 // Default values for the watchlist
 const defaults = {
   watchList: [],
-  template: ""
+  template: "",
+  subject: ""
 };
 
 const decisions = {
@@ -44,14 +46,45 @@ class Storage {
     return settings;
   }
 
-  static saveSettings() {
-    const options = Settings.fromUI();
-    GM_setValue('settings', options);
+  static saveSettings(lastSeen) {
+    const saved = Storage.getSettings({});
+    const uiSettings = Settings.fromPersonalStatsPage()
+    const extra = lastSeen ? { lastSeen } : {};
+
+    const mixed = Object.assign({}, saved, uiSettings, extra);
+
+    GM_setValue('settings', mixed);
+  }
+
+  static saveLastSeen(lastSeen) {
+    Storage.saveSettings(lastSeen);
   }
 }
 
 class Settings {
-  static fromUI() {
+  static fromUI(url) {
+    if (url.includes('messages.php'))
+      return Settings.fromGeneralSettings();
+    else if (url.includes('personalstats.php'))
+      return Settings.fromPersonalStatsPage();
+  }
+
+  static fromGeneralSettings() {
+    const template = $("#tra-msg").val();
+    const appURL = $('#tra-appurl').val();
+    const subject = $('#tra-msgsubject').val();
+
+    return { template, appURL, subject };
+  }
+
+  static fromMessagePage() {
+    const settings = Settings.fromGeneralSettings();
+
+    return settings;
+  }
+
+  static fromPersonalStatsPage() {
+    const settings = Settings.fromGeneralSettings();
     const watchList = [];
     const watchOptions = $("#tra-watchlist").find("option");
 
@@ -62,34 +95,74 @@ class Settings {
     const template = $("#tra-msg").val();
     const appURL = $('#tra-appurl').val();
 
-    return { watchList, template, appURL };
+    settings.watchList = watchList;
+
+    return settings;
   }
 }
 
-class PlayerInfo {
-  static clearValue(valueElement) {
+class Utilities {
+  static clearValue(text) {
     // Text in the detailed page can have:
     // $ for money
     // , for thousands
     // (/d+%) for... something
     // -- for private info?
     // d h m s for time
-    const text = $(valueElement).text();
+
+    if (typeof text == 'number' || !text) return text;
 
     if (text.startsWith('$')) return parseInt(removeThousandsSep(text.slice(1)));
     if (text.includes('%')) return parseInt(removeThousandsSep(text.split(' ')[0]));
-    if (text.includes('d') || text == '--') return text;
+    if (PlayerInfo.parseTornDate(text)) return text;
+    if (text == '--') return text;
 
     return parseInt(removeThousandsSep(text));
+  }
+}
+
+class PlayerInfo {
+  static parseTornDate(text) {
+    let regexp = new RegExp('(\\d+)d (\\d+)h (\\d+)m (\\d+)s');
+
+    let match = regexp.exec(text);
+
+    if (match) {
+      return {
+        d: match[1],
+        h: match[2],
+        m: match[3],
+        s: match[4]
+      }
+    }
+
+    return undefined;
+  }
+
+  static getClearValue(player, stat) {
+    if (stat.includes('.')) {
+      const split = stat.split('.');
+      const tornDate = PlayerInfo.parseTornDate(player[split[0]]);
+
+      if (tornDate) {
+        return Utilities.clearValue(tornDate[split[1]]);
+      }
+
+      console.error(`Torn Recruit Assistant - Tried to get a torn date element from an invalid value: ${stat}`);
+      return undefined;
+    }
+
+    return Utilities.clearValue(player[stat])
   }
 
   static getRecruitValue(statElement) {
     // This is prone to break, but the value we have to compare is the second column to the right of the stat name
     // also, the value itself is in the middle span... o.O
     const statValueElement = $(statElement).next().next().children(':nth-child(2)');
-    return PlayerInfo.clearValue(statValueElement);
+    return Utilities.clearValue($(statValueElement).text());
   }
 
+  // pos = 1 is the second player in the detailed pane
   static getNameId() {
     const playerText = $('div[class^="userLabel"]:nth(1)').text();
 
@@ -97,7 +170,7 @@ class PlayerInfo {
     name = name.slice(1); // remove leading + sign on this element
     id = id.replace('[', '').replace(']', ''); // remove brackets from id
 
-    return { name, id }
+    return { name, id };
   }
 
   static fromDetailedPage() {
@@ -124,33 +197,125 @@ function copyTextToClipboard(elementId) {
   window.getSelection().removeAllRanges();// to deselect
 }
 
-function setDecisionClickPostEvent() {
-  // Click on recruit copies generated message to clipboard
-  $("#tra-decision > img").on("click", () => {
-    copyTextToClipboard('tra-generatedmsg');
-    postData(Settings.fromUI().appURL, "Messaged");
-    showMessaged();
+function getNonMessaged(appURL, lastSeen, callback) {
+  const nonMessagedURL = `${appURL}?nonmessaged=1`;
+
+  GM_xmlhttpRequest({
+    method: 'GET',
+    url: nonMessagedURL,
+    onload: function(response) {
+      let json = JSON.parse(response.responseText);
+      if (json.code == 200) {
+        // This should have returned an object of players, which we can save to the document for future reference
+        window.traPlayers = json.object;
+        callback(json.object, lastSeen);
+      }
+    },
+    onerror: (response) =>
+    {
+      console.log(response);
+    }
   });
 }
 
-function recruitUI(settings) {
+function updateNonMessagedDropdown(players, lastSeen) {
+  $('#tra-recipient').empty();
+  for(const [id, player] of Object.entries(players)) {
+    $('#tra-recipient').append(`<option value="${id}" ${lastSeen && lastSeen.id == id ? "selected" : ""}>${player.name} - ${player.lastDecision}</option>`);
+  }
+}
+
+function settingsUI(beforeElementId, settings) {
   // Main boxes definitions
+  const traUI = $('<div id="tra-ui"></div>');
   const boxTitle = $('<div class="title-black top-round m-top10">Torn Recruitment Assistant<button type="button" id="tra-save" style="float: right; background-color: lightgray;border: 1px solid black;height: 2em;border-radius: 5px;color: black;"">Save</button></div>');
   const msgTemplateBody = $('<div style="border-top: 1px solid #3e3e3e; border-bottom: 1px solid #3e3e3e; background-color: #2e2e2e; color: #ccc; padding: 10px;"></div>');
   const appURLBody = $('<div style="border-top: 1px solid #3e3e3e; border-bottom: 1px solid #3e3e3e; background-color: #2e2e2e; color: #ccc; padding: 10px;"></div>');
   const boxBody = $('<div style="border-top: 1px solid #3e3e3e; background-color: #2e2e2e; color: #ccc; border-radius: 0 0 5px 5px; padding: 10px; display: flex;"></div>');
 
   // Set the location of stuff
-  $('div.content-title').before(boxTitle);
-  boxTitle.after(appURLBody);
-  appURLBody.after(msgTemplateBody);
-  msgTemplateBody.after(boxBody);
+  $(beforeElementId).before(traUI);
+  traUI.append(boxTitle);
+  traUI.append(appURLBody);
+  traUI.append(msgTemplateBody);
+
+  traUI.append(boxBody);
 
   // Control to save the application URL
   appURLBody.append($(`<label for="tra-appurl" style="margin-right: 5px; width: 100%;">Google App URL</label><input type="text" id="tra-appurl" value="${settings.appURL}">`));
 
   // Control for message template
-  msgTemplateBody.append($(`<div><label for="tra-msg">Message Template</label></div><div><textarea id="tra-msg" rows="3" style="width: 100%;">${settings.template}</textarea></div>`));
+  msgTemplateBody.append($(`<div><label for="tra-msg">Message Subject</label></div>
+    <div><input type="text" style="width: 100%;" id="tra-msgsubject" value="${settings.subject}"></div>
+    <div><label for="tra-msg">Message Template</label></div>
+    <div><textarea id="tra-msg" rows="3" style="width: 100%;">${settings.template}</textarea></div>`));
+
+  $('#tra-save').on('click', () => {
+    Storage.saveSettings();
+  });
+
+  return boxBody;
+}
+
+function messageUI(settings) {
+  const boxBody = settingsUI('#mailbox-main', settings);
+  boxBody.append($(`<select id="tra-recipient"></select><button type="button" id="tra-fillmessage">Fill Message</button>`));
+
+  if (settings.lastSeen) {
+    $("#tra-recipient").append($(`<option value="${settings.lastSeen.id}">${settings.lastSeen.name} - ${settings.lastSeen.lastDecision}</option><option value="0">Loading Non-Messaged players</option>`));
+
+    // Save the last seen to window.traPlayers in case we use it before the GET request finishes
+    window.traPlayers = {};
+    window.traPlayers[settings.lastSeen.id] = settings.lastSeen;
+  } else {
+    $("#tra-recipient").append(`<option value="0">Loading Non-Messaged players</option>`);
+  }
+
+  getNonMessaged(settings.appURL, settings.lastSeen, updateNonMessagedDropdown);
+  
+  $('#tra-fillmessage').on('click', () => {
+    let uiSettings = Settings.fromUI(document.documentURI);
+
+    let option = $('#tra-recipient > option:selected');
+    const id = option.val();
+
+    const player = window.traPlayers[id];
+
+    $('#ac-search-0').val(`${player.name} [${id}]`);
+
+    $('input.subject').val(uiSettings.subject);
+
+    $("#mailcompose_ifr").contents().find('body > p').text(generateMessage(uiSettings.template, player));
+  });
+
+  $('#tra-fillmessage').click();
+
+  $('.form-submit-send').on('click', () => {
+    let uiSettings = Settings.fromUI(document.documentURI);
+
+    let option = $('#tra-recipient > option:selected');
+    const id = option.val();
+
+    const player = { id, lastDecision: 'Messaged' };
+
+    postData(uiSettings.appURL, player);
+  });
+}
+
+function isValidStat(txt) {
+  const calculatedField = splitByOperation(txt);
+
+  if (Object.keys(calculatedField).length > 0) {
+    const stat1Check = $(`div[class^="statName"]:contains("${calculatedField.stat1}")`).length > 0;
+    const stat2Check = $(`div[class^="statName"]:contains("${calculatedField.stat2}")`).length > 0;
+    return stat1Check && stat2Check;
+  }
+
+  return $(`div[class^="statName"]:contains("${txt}")`).length > 0;
+}
+
+function recruitUI(settings) {
+  const boxBody = settingsUI('div.content-title', settings);
 
   // Main controls definitions
   const firstRow = $('<p style="display: contents;"></p>');
@@ -194,12 +359,17 @@ function recruitUI(settings) {
     const statValue = $("#tra-statvalue").val().trim();
     const statOperation = $("#tra-operation").val().trim();
 
+    if (!statName || !isNumber(statValue)) return;
+
+    if (!isValidStat(statName)) return;
+
     const watchValue = `${statName} ${statOperation} ${statValue}`;
     $("#tra-watchlist").append(`<option value="${watchValue}">${watchValue}</option>`);
 
     Storage.saveSettings();
     evaluateRecruit();
   });
+
   $("#tra-removestat").on("click", () => {
     const option = $("#tra-watchlist").find(":selected");
     option.remove();
@@ -221,50 +391,77 @@ function clearDecision() {
   $('#tra-generatedmsg').empty();
 }
 
+function generateMessage(template, player) {
+  let msg = template;
+
+  for (let [k, v] of Object.entries(player)) {
+    msg = msg.replace(`{${k}}`, addThousandsSep(v.toString()));
+  }
+
+  return msg;
+}
+
 function showMessaged() {
   clearDecision();
   const imgName = "messaged.png";
   $('#tra-decision').append($(`<img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;">`));
 }
 
-function showDecision(recruitable = false, results = {}, template = "") {
+function showDecision(recruitable = false, player = {}, results = {}) {
   clearDecision();
   const imgName = recruitable ? "recruit.png" : "reject.png";
 
-  $('#tra-decision').append($(`<img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;">`));
+  $('#tra-decision').append($(`<div><a href="messages.php#/p=compose"><img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;"></a></div>`));
+  $('#tra-decision').append($('<div style="margin: 10px 0px 5px 0px;"><strong>Results:</strong></div>'));
 
-  if (recruitable) {
-    setDecisionClickPostEvent();
-    const statLines = [];
-    for(let [stat, value] of Object.entries(results)) {
-      statLines.push(`  * ${stat} at ${addThousandsSep(value.toString())}`);
-    }
-
-    $('#tra-generatedmsg').text(template.replace('{stats}', statLines.join('<br \>')));
+  for (let [k, v] of Object.entries(results)) {
+    $('#tra-decision').append($(`<div><span style="color: ${v.satisfies ? "green" : "red"};">${v.satisfies ? "&#10004;" : "&#10008;"} ${k} is ${v.value}</span></div>`));
   }
+}
+
+function splitByComparison(txt) {
+  const comparisons = ['<', '<=', '=', '>=', '>'];
+
+  for (let i = 0; i < comparisons.length; i++) {
+    operator = comparisons[i];
+    const search = txt.indexOf(` ${operator} `);
+    if (search === -1) continue;
+
+    const split = txt.split(` ${operator} `);
+    stat = split[0].trim();
+    value = split[1].trim();
+
+    return [stat, operator, Utilities.clearValue(value)];
+  }
+
+  return [];
+}
+
+function splitByOperation(txt) {
+  const operations = ['+', '-', '*', '/'];
+
+  for (let i = 0; i < operations.length; i++) {
+    operation = operations[i];
+    if (!txt.includes(operation)) continue;
+
+    const split = txt.split(` ${operation} `);
+    return {stat1: split[0].trim(), operation, stat2: split[1].trim() }
+  }
+
+  return {};
 }
 
 // Translate saved watch into an easier to work object
 function watchedStats(watchList) {
-  const operators = ['<', '<=', '=', '>=', '>'];
-  const results = {};
+  const stats = {};
 
   watchList.forEach((watch) => {
-    let stat;
-    let value;
+    const [ stat, operator, value ] = splitByComparison(watch);
 
-    operators.forEach((operator) => {
-      const search = watch.indexOf(` ${operator} `);
-      if (search === -1) return;
-
-      const split = watch.split(` ${operator} `);
-      stat = split[0].trim();
-      value = parseInt(split[1].trim());
-      results[stat] = {operator, value};
-    })
+    stats[stat] = {operator, value};
   });
 
-  return results;
+  return stats;
 }
 
 function statSatisfies(statValue, comparison) {
@@ -284,11 +481,33 @@ function statSatisfies(statValue, comparison) {
   return false;
 }
 
-function postData(url, decision) {
-  const player = PlayerInfo.fromDetailedPage();
+function runCalculation(stat1, operator, stat2, decimals = 1) {
+  let result;
+  switch(operator) {
+    case '-':
+      result = stat1 - stat2;
+      break;
+    case '+':
+      result = stat1 + stat2;
+      break;
+    case '*':
+      result = stat1 * stat2;
+      break;
+    case '/':
+      result = stat1 / stat2;
+      break;
+    default:
+      return undefined;
+  }
 
-  player.lastScouted = Date.now();
-  player.lastDecision = decision
+  return parseFloat(result.toFixed(decimals));
+}
+
+function postData(url, player) {
+  // Fetch the recruiter name from the left bar
+  const recruiterName = $('a[class^="menu-value"]').text();
+
+  player.lastSeenBy = recruiterName;
 
   GM_xmlhttpRequest({
     method: 'POST',
@@ -325,49 +544,60 @@ function checkPlayerMessaged(url, playerId) {
   });
 }
 
+function isPersonalStatsPage() {
+  return document.documentURI.includes('personalstats.php');
+}
+
 async function evaluateRecruit() {
-  const settings = Settings.fromUI();
+  const settings = Settings.fromUI(document.documentURI);
 
   if (settings.watchList.length == 0) {
     clearDecision();
     return;
   }
 
-  const info = PlayerInfo.getNameId();
+  const player = PlayerInfo.fromDetailedPage();
 
-  const player = await checkPlayerMessaged(settings.appURL, info.id);
+  const playerInDB = await checkPlayerMessaged(settings.appURL, player.id);
 
   const watchValues = watchedStats(settings.watchList);
-  const results = {};
 
   let comparisons = [];
+  const results = {};
   for(const [statName, comparison] of Object.entries(watchValues)) {
-    let stat;
-    const divs = $('div[class^="scrollArea"]').find('div[class^="statName"]');
-    divs.each((idx, el) => {
-      if ($(el).text() === statName) {
-        stat = el;
-        return;
-      }
-    });
+    const calculationCheck = splitByOperation(statName);
+    let statValue;
+    if (Object.keys(calculationCheck).length > 0) {
+      const stat1Value = PlayerInfo.getClearValue(player, calculationCheck.stat1);
+      const stat2Value = PlayerInfo.getClearValue(player, calculationCheck.stat2);
+      statValue = runCalculation(stat1Value, calculationCheck.operation, stat2Value);
+    } else {
+      statValue = PlayerInfo.getClearValue(player, statName);
+    }
 
-    if (stat === undefined) return;
+    if (!statValue) continue;
 
-    const statValue = PlayerInfo.getRecruitValue(stat);
-
-    comparisons.push(statSatisfies(statValue, comparison));
-    results[statName] = statValue;
+    const satisfies = statSatisfies(statValue, comparison);
+    comparisons.push(satisfies);
+    results[statName] = { value: statValue, satisfies };
   }
 
-  if (player && player.lastDecision === 'Messaged') {
-    postData(settings.appURL, "Messaged");
+  player.lastScouted = Date.now();
+
+  if (playerInDB && playerInDB.lastDecision === 'Messaged') {
+    player.lastDecision = 'Messaged';
+    if (isPersonalStatsPage()) postData(settings.appURL, player);
   } else {
     const recruitable = comparisons.every((v) => v);
-    showDecision(recruitable, results, settings.template);
+    showDecision(recruitable, player, results);
 
     const decision = recruitable ? decisions.recruitable : decisions.rejected;
-    postData(settings.appURL, decision);
+    player.lastDecision = decision;
+    postData(settings.appURL, player);
   }
+
+  // Save to script storage for immediate use in message.php if necessary
+  Storage.saveLastSeen(player);
 }
 
 async function watchPage() {
@@ -394,10 +624,30 @@ async function watchPage() {
   });
 }
 
-const settings = Storage.getSettings(defaults);
+const traSettings = Storage.getSettings(defaults);
+let UIloaded;
 
-recruitUI(settings);
+if (document.documentURI.includes('personalstats.php')) {
+  recruitUI(traSettings);
 
-watchPage().catch((e) => {
-  console.log(e);
-});
+  watchPage().catch((e) => {
+    console.log(e);
+  });
+} else if (!window.loadingUI && !UIloaded && document.documentURI.includes('messages.php')) { // when opening message from the menu
+  // documents seem to be reloaded/recreated by some XHRs, so checking for compose makes sure we run this code once
+  window.loadingUI = true;
+  window.onload = () => {
+    var waitForLoad = () => {
+      if (typeof jQuery != "undefined") {
+        UIloaded = true;
+        messageUI(traSettings);
+      } else {
+        if (!UIloaded) {
+          window.setTimeout(waitForLoad, 500);
+        }
+      }
+    };
+
+    window.setTimeout(waitForLoad, 500);
+  };
+}

@@ -69,6 +69,62 @@ function createOutputResponse(response) {
   return ContentService.createTextOutput(JSON.stringify(response));
 }
 
+function findPlayersWithDecision(decision = []) {
+  const startingRow = 2; // 1st row is header
+  const results = {};
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(informationSheetName);
+  var columnValues = sheet.getRange(startingRow, columns.lastDecision, sheet.getLastRow()).getValues();
+
+  for(let i = 0; i <= columnValues.length; i++) {
+    // Check if
+    if (decision.includes(columnValues[i])) {
+      const rowNumber = startingRow + i;
+      const rowValues = sheet.getRange(rowNumber, 1, 1, Object.keys(columns).length).getValues()[0];
+
+      const player = createPlayerFromRow(rowValues);
+      results[player.id] = player;
+    }
+  }
+
+  return results;
+}
+
+function getPlayersWithDecisionsResponse(decisions) {
+  decisions = ['Recruitable', 'Rejected'];
+  const search = findPlayersWithDecision(decisions);
+
+  if (!search) {
+    response.code = 404;
+    response.msg = `No players found with lastDecision: ${decisions.join(', ')}`;
+
+    return createOutputResponse(response);
+  }
+
+  response.code = 200;
+  response.object = search;
+
+  return createOutputResponse(response);
+}
+
+function getSinglePlayerResponse(id) {
+  const search = findPlayer(id);
+
+  if (!search) {
+    response.code = 404;
+    response.msg = `Player with ID ${id} not found`;
+
+    return createOutputResponse(response);
+  }
+
+  const { player } = search;
+
+  response.code = 200;
+  response.msg = `Player ${player.name} (${player.id}) has been found. Last Decision: ${player.lastDecision}`;
+  response.object = player;
+
+  return response;
+}
+
 function doGet(request) {
   let response = {
     code: 400,
@@ -79,29 +135,20 @@ function doGet(request) {
   // request.parameter holds the url args of the request
   const args = request.parameter;
   if (Object.keys(args).length == 0) {
-    response.msg = 'ERROR - payload undefined';
+    response.msg = 'ERROR - No parameters defined';
     return createOutputResponse(response);
   }
 
-  if (!args.playerId) {
-    response.msg = 'ERROR - playerId not sent in payload';
+  if (args.playerId) {
+    response = getSinglePlayerResponse(args.playerId)
+    return createOutputResponse(response);
+  } else if (args.nonmessaged) {
+    response = getPlayersWithDecisionsResponse(['Recruitable', 'Rejected']);
     return createOutputResponse(response);
   }
 
-  const search = findPlayer(args.playerId);
-
-  if (!search) {
-    response.code = 404;
-    response.msg = `Player with ID ${args.playerId} not found`;
-
-    return createOutputResponse(response);
-  }
-
-  const { player } = search;
-
-  response.code = 200;
-  response.msg = `Player ${player.name} (${player.id}) has been found. Last Decision: ${player.lastDecision}`;
-  response.object = player;
+  response.msg = `ERROR - Invalid argument(s):\n${Object.keys(args).join(', ')}`;
+  response.code = 400;
 
   return createOutputResponse(response);
 }
