@@ -42,9 +42,31 @@ Others (-- or formatted time): As shown
 ![Step 4 Image](images/step4.png)
 
 After this point, you should receive a URL, this is the URL for your web application and **needs** to be provided in 
-the userscript settings
+the userscript settings.
+
+### Setting up the sheet
+
+For data to be saved, a sheet named `Information` needs to exist. Inside this sheet the first row is used for searching
+the column where different values need to be saved, with the first `5` rows reserved for script functionality.
+
+The first 5 columns need to be:
+1. id
+1. name
+1. lastScouted
+1. lastDecision
+1. lastSeenBy
+
+From column 6 you can start setting up the columns you want to save to your sheet. The text should **exactly** match the
+name of the stat in the `personalstats.php` page, otherwise stats will not be able to be mapped properly.
+
+As an example, the following sheet tracks the `Attacks won`, `Energy refills`, `Xanax taken`, `Fraud` (crimes) 
+and `Total respect` for users scouted with the script. 
+
+![Google Sheet Setup](images/sheetsetup.png)
 
 ## Using the script
+
+### In Personal Stats page
 
 Once the script has been installed, the following UI should appear whenever you open the personal stats page of any player
 in Torn:
@@ -54,24 +76,74 @@ in Torn:
 Numbered elements are:
 1. Save changes button
 1. Google Application URL where data will be sent
-1. Message template that will be used to generate the final message based on watched stats
+1. Message and Subject template that will be used for filling the message
 1. Controls to add a specific stat to the Stats Watch list
 1. Current Stats Watch list
 1. Button to remove selected stat from the Stats Watch list
-1. Decision area
+1. Decision visual indicator. Clicking on this button will bring you to the `Messages` page
+1. Comparison Results
 
-### Process
+#### Process
 
-The current process the script executes is the following:
+The current process the script executes the following once the page finishes loading:
 
-1. Once the page finishes loading, it will go over any stat added to the Stats Watch list and look for the corresponding
-value on the player's stats
+1. Query the Google Sheet App to validate if this player has already been messaged or not. If the application states 
+that it has been messaged, then it will show a `Messaged` image in the `Decision Visual Indicator` section.
+1. It will go over any stat added to the Stats Watch list and look for the corresponding value on the player's stats
 1. If ALL requirements are met, one of two decisions are displayed:
     1. Reject: The player does not meet your criteria
     1. Recruit: The player meets your criteria
 1. Once a decision is shown, the script will send data to the web application with the player information and the 
 current decision
-1. If the `Recruit` decision is displayed, the message template you set will be shown under the image. You will also be 
-able to click on the `Recruit` button to copy the pre-generated message to your clipboard.
-    1. If the `Recruit` button is clicked, another request will be sent to the web application to update the decision 
-    to: `Messaged`. This is useful to keep track of who's been contacted already or not. 
+1. A summary of compared stats will be displayed under the `Decision Visual Indicator` for quick reference into which 
+criteria was met or not
+1. A reference to this player is saved on the script's local storage. That way, when going back to the messages page,
+the reference to the player will be used to prefill a message while the script retrieves user information from the
+Google Sheet App
+
+### In Messages page
+
+The messages page gives you controls to fill a message based on your template and the selected user. This UI queries the
+google sheet application for any player that has been flagged as "Recruitable" or "Rejected" so that you can decide who
+to send a message to.
+
+![UI Message Overview](images/ui2.png)
+ 
+Some of the same controls are in this page too, with a couple of new additions:
+
+1. Dropdown box for user selection
+1. `Fill Message` button to create the message with the template, subject and player data
+
+#### Process
+
+Once the `Messages` page loads:
+
+1. The dropdown (1) will be populated with the last seen user in the script's local storage
+1. The script will query the Google Sheet App to retrieve those records that have a status of `Rejected` or `Recruitable`.
+ Once the request returns with returns, the dropdown (1) will be updated to include the results
+1. When the `Fill Message` (2) button is clicked, the script will fill out the message controls based on the following:
+    1. `Message Subject` value will be processed and copied to `Subject`
+    1. `Message Template` value will be processed and copied to the message body
+    
+##### Message processing
+
+When filling out the message form, some processing is done in the templates to ensure that some tags can be replaced with
+user information. This information is taken from the Google Sheet App (or the last reference to the player), and as such
+it is important to setup the Google Sheet App with the data that you think its important for your recruitment process.
+
+For the replacement process to work, tags can be used in the format of `{stat}` in either the Message Subject or 
+Message template fields.
+
+The following tags are able to be used:
+* {name}
+* {id}
+* {player stat as it appears in the personal stats page}
+
+ As an example, if you wanted to create a message that includes the number of attacks a player won, then the following 
+ template could be used:
+ 
+ `This is a templated message for {Attacks won} attacks won for {name}`
+ 
+ The above template for a player named `Hello` with 2000 Attacks won on their belt would look like:
+ 
+ `This is a templated message for 2000 attacks won for Hello`
