@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Recruitment Assistant
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.0.0
+// @version 1.0.1
 // @description Compare stats of a player against parameters to quickly assess recruitment value
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCombat.user.js
@@ -78,9 +78,7 @@ class Settings {
   }
 
   static fromMessagePage() {
-    const settings = Settings.fromGeneralSettings();
-
-    return settings;
+    return Settings.fromGeneralSettings();
   }
 
   static fromPersonalStatsPage() {
@@ -91,9 +89,6 @@ class Settings {
     watchOptions.each((idx, option) => {
       watchList.push(option.value);
     });
-
-    const template = $("#tra-msg").val();
-    const appURL = $('#tra-appurl').val();
 
     settings.watchList = watchList;
 
@@ -115,7 +110,7 @@ class Utilities {
     if (text.startsWith('$')) return parseInt(removeThousandsSep(text.slice(1)));
     if (text.includes('%')) return parseInt(removeThousandsSep(text.split(' ')[0]));
     if (PlayerInfo.parseTornDate(text)) return text;
-    if (text == '--') return text;
+    if (text === '--') return text;
 
     return parseInt(removeThousandsSep(text));
   }
@@ -180,8 +175,7 @@ class PlayerInfo {
 
     statSearch.each((idx, el) => {
       const statName = $(el).text();
-      const statValue = PlayerInfo.getRecruitValue(el);
-      player[statName] = statValue;
+      player[statName] = PlayerInfo.getRecruitValue(el);
     });
 
     return player;
@@ -219,9 +213,11 @@ function getNonMessaged(appURL, lastSeen, callback) {
 }
 
 function updateNonMessagedDropdown(players, lastSeen) {
-  $('#tra-recipient').empty();
+  const el = $('#tra-recipient');
+
+  el.empty();
   for(const [id, player] of Object.entries(players)) {
-    $('#tra-recipient').append(`<option value="${id}" ${lastSeen && lastSeen.id == id ? "selected" : ""}>${player.name} - ${player.lastDecision}</option>`);
+    el.append(`<option value="${id}" ${lastSeen && lastSeen.id == id ? "selected" : ""}>${player.name} - ${player.lastDecision}</option>`);
   }
 }
 
@@ -248,7 +244,7 @@ function settingsUI(beforeElementId, settings) {
   msgTemplateBody.append($(`<div><label for="tra-msg">Message Subject</label></div>
     <div><input type="text" style="width: 100%;" id="tra-msgsubject" value="${settings.subject}"></div>
     <div><label for="tra-msg">Message Template</label></div>
-    <div><textarea id="tra-msg" rows="3" style="width: 100%;">${settings.template}</textarea></div>`));
+    <div><textarea id="tra-msg" rows="8" style="width: 100%; resize: vertical;">${settings.template}</textarea></div>`));
 
   $('#tra-save').on('click', () => {
     Storage.saveSettings();
@@ -272,8 +268,9 @@ function messageUI(settings) {
   }
 
   getNonMessaged(settings.appURL, settings.lastSeen, updateNonMessagedDropdown);
-  
-  $('#tra-fillmessage').on('click', () => {
+
+  const fillMessageElement = $('#tra-fillmessage');
+  fillMessageElement.on('click', () => {
     let uiSettings = Settings.fromUI(document.documentURI);
 
     let option = $('#tra-recipient > option:selected');
@@ -283,12 +280,17 @@ function messageUI(settings) {
 
     $('#ac-search-0').val(`${player.name} [${id}]`);
 
-    $('input.subject').val(uiSettings.subject);
+    $('input.subject').val(replacePlayerStats(uiSettings.subject, player));
 
-    $("#mailcompose_ifr").contents().find('body > p').text(generateMessage(uiSettings.template, player));
+    if (tinymce) {
+      const mailcompose = tinymce.get('mailcompose');
+
+      if (mailcompose)
+        mailcompose.setContent(generateMessage(uiSettings.template, player));
+    }
   });
 
-  $('#tra-fillmessage').click();
+  fillMessageElement.click();
 
   $('.form-submit-send').on('click', () => {
     let uiSettings = Settings.fromUI(document.documentURI);
@@ -391,14 +393,22 @@ function clearDecision() {
   $('#tra-generatedmsg').empty();
 }
 
-function generateMessage(template, player) {
-  let msg = template;
-
+function replacePlayerStats(text, player) {
+  let replacedString = text;
   for (let [k, v] of Object.entries(player)) {
-    msg = msg.replace(`{${k}}`, addThousandsSep(v.toString()));
+     replacedString = replacedString.replace(`{${k}}`, addThousandsSep(v.toString()));
   }
 
-  return msg;
+  return replacedString
+}
+
+function generateMessage(template, player) {
+  // since this is going into tinymce, we need to convert \n to enclosed lines with <p>
+  let tinymceMsg = template.split('\n').join('<br />')
+
+  tinymceMsg = replacePlayerStats(tinymceMsg, player);
+
+  return tinymceMsg;
 }
 
 function showMessaged() {
@@ -411,11 +421,12 @@ function showDecision(recruitable = false, player = {}, results = {}) {
   clearDecision();
   const imgName = recruitable ? "recruit.png" : "reject.png";
 
-  $('#tra-decision').append($(`<div><a href="messages.php#/p=compose"><img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;"></a></div>`));
-  $('#tra-decision').append($('<div style="margin: 10px 0px 5px 0px;"><strong>Results:</strong></div>'));
+  const decision = $('#tra-decision');
+  decision.append($(`<div><a href="messages.php#/p=compose"><img src="${imgBaseUrl}/${imgName}" style="margin-left: auto; margin-right: auto; display: block;"></a></div>`));
+  decision.append($('<div style="margin: 10px 0 5px 0;"><strong>Results:</strong></div>'));
 
   for (let [k, v] of Object.entries(results)) {
-    $('#tra-decision').append($(`<div><span style="color: ${v.satisfies ? "green" : "red"};">${v.satisfies ? "&#10004;" : "&#10008;"} ${k} is ${v.value}</span></div>`));
+    decision.append($(`<div><span style="color: ${v.satisfies ? "green" : "red"};">${v.satisfies ? "&#10004;" : "&#10008;"} ${k} is ${v.value}</span></div>`));
   }
 }
 
@@ -505,9 +516,7 @@ function runCalculation(stat1, operator, stat2, decimals = 1) {
 
 function postData(url, player) {
   // Fetch the recruiter name from the left bar
-  const recruiterName = $('a[class^="menu-value"]').text();
-
-  player.lastSeenBy = recruiterName;
+  player.lastSeenBy = $('a[class^="menu-value"]').text();
 
   GM_xmlhttpRequest({
     method: 'POST',
@@ -551,7 +560,7 @@ function isPersonalStatsPage() {
 async function evaluateRecruit() {
   const settings = Settings.fromUI(document.documentURI);
 
-  if (settings.watchList.length == 0) {
+  if (settings.watchList.length === 0) {
     clearDecision();
     return;
   }
@@ -591,8 +600,7 @@ async function evaluateRecruit() {
     const recruitable = comparisons.every((v) => v);
     showDecision(recruitable, player, results);
 
-    const decision = recruitable ? decisions.recruitable : decisions.rejected;
-    player.lastDecision = decision;
+    player.lastDecision = recruitable ? decisions.recruitable : decisions.rejected;
     postData(settings.appURL, player);
   }
 
