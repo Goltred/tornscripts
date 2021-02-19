@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Combat Helper
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.0.0
+// @version 1.1.0
 // @description Changes to the combat screen to help in different situations
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCombat.user.js
@@ -15,7 +15,8 @@
 const defaults = {
   hideLeave: false,
   hideMug: false,
-  hideHosp: false
+  hideHosp: false,
+  hideArrest: false
 };
 
 class Storage {
@@ -46,6 +47,7 @@ class Settings {
     settings.hideLeave = $("#tc-hideleave").is(':checked');
     settings.hideMug = $("#tc-hidemug").is(':checked');
     settings.hideHosp = $("#tc-hidehosp").is(':checked');
+    settings.hideArrest = $("#tc-hidearrest").is(':checked');
 
     return settings;
   }
@@ -59,6 +61,7 @@ function combatUI(settings) {
   controls.append($(`<span style="margin: 0 2px 0 2px;"><input type="checkbox" id="tc-hideleave" ${settings.hideLeave ? 'checked' : ''}><label for="tc-hideleave">Hide Leave</label></span>`));
   controls.append($(`<span style="margin: 0 2px 0 2px;"><input type="checkbox" id="tc-hidemug" ${settings.hideMug ? 'checked' : ''}><label for="tc-hidemug">Hide Mug</label></span>`));
   controls.append($(`<span style="margin: 0 2px 0 2px;"><input type="checkbox" id="tc-hidehosp" ${settings.hideHosp ? 'checked' : ''}><label for="tc-hidehosp">Hide Hospitalize</label></span>`));
+  controls.append($(`<span style="margin: 0 2px 0 2px;"><input type="checkbox" id="tc-hidearrest" ${settings.hideArrest ? 'checked' : ''}><label for="tc-hidearrest">Hide Arrest</label></span>`));
   boxBody.append(controls);
   boxTitle.after(boxBody);
 
@@ -88,6 +91,7 @@ function processButtons(targetElement) {
     if (jqElement.text().toLowerCase() == 'leave') settings.hideLeave ? jqElement.hide() : jqElement.show();
     if (jqElement.text().toLowerCase() == 'mug') settings.hideMug ? jqElement.hide() : jqElement.show();
     if (jqElement.text().toLowerCase() == 'hosp') settings.hideHosp ? jqElement.hide() : jqElement.show();
+    if (jqElement.text().toLowerCase() == 'arrest') settings.hideArrest ? jqElement.hide() : jqElement.show();
   });
 }
 
@@ -110,7 +114,6 @@ function watchCombat() {
       // Quit if a defender modal is not being added
       if (!node.className.includes('modal') && !node.className.includes('defender')) return;
 
-      console.log("Detected incoming buttons");
       processButtons(node);
     });
   });
