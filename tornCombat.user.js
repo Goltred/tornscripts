@@ -90,7 +90,7 @@ function processButtons(targetElement) {
     console.log(jqElement);
     if (jqElement.text().toLowerCase() == 'leave') settings.hideLeave ? jqElement.hide() : jqElement.show();
     if (jqElement.text().toLowerCase() == 'mug') settings.hideMug ? jqElement.hide() : jqElement.show();
-    if (jqElement.text().toLowerCase() == 'hosp') settings.hideHosp ? jqElement.hide() : jqElement.show();
+    if (jqElement.text().toLowerCase() == 'hospitalize') settings.hideHosp ? jqElement.hide() : jqElement.show();
     if (jqElement.text().toLowerCase() == 'arrest') settings.hideArrest ? jqElement.hide() : jqElement.show();
   });
 }
