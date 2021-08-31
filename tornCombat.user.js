@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Combat Helper
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.1.0
+// @version 1.1.1
 // @description Changes to the combat screen to help in different situations
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCombat.user.js
