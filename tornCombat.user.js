@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Combat Helper
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.1.0
+// @version 1.1.1
 // @description Changes to the combat screen to help in different situations
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornCombat.user.js
@@ -90,7 +90,7 @@ function processButtons(targetElement) {
     console.log(jqElement);
     if (jqElement.text().toLowerCase() == 'leave') settings.hideLeave ? jqElement.hide() : jqElement.show();
     if (jqElement.text().toLowerCase() == 'mug') settings.hideMug ? jqElement.hide() : jqElement.show();
-    if (jqElement.text().toLowerCase() == 'hosp') settings.hideHosp ? jqElement.hide() : jqElement.show();
+    if (jqElement.text().toLowerCase() == 'hospitalize') settings.hideHosp ? jqElement.hide() : jqElement.show();
     if (jqElement.text().toLowerCase() == 'arrest') settings.hideArrest ? jqElement.hide() : jqElement.show();
   });
 }
