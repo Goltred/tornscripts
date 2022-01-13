@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction War Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.0.0
+// @version 1.0.1
 // @description Filtering controls for faction war view.
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionWar.user.js
@@ -258,7 +258,7 @@ class WarUI {
 
     const controlsDiv = $(`
       <div id="tcw-controls" class="faction-info-wrap another-faction" style="display: grid;">
-        <div class="title-black top-round m-top10">Torn Hospital - Filters</div>
+        <div class="title-black top-round m-top10">Faction War - Filters</div>
         <div class="faction-info bottom-round" style="padding: 10px;">
           <div style="width: 70%; float: left;">
           <p>
