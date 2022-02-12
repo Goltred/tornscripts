@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction War Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.0.1
+// @version 1.2.0
 // @description Filtering controls for faction war view.
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionWar.user.js
@@ -45,6 +45,12 @@ const ScriptStatus = {
 
 let log;
 
+function addToWarFilter(element) {
+  let row = new MemberRow(element);
+  Storage.append(row.userid, row.name);
+  WarUI.RefreshHiddenUsers();
+}
+
 class MobileLogWindow {
   constructor(show = false) {
     if (show) this.showUI();
@@ -67,14 +73,17 @@ class MobileLogWindow {
 }
 
 class Storage {
-  static async append(profileId) {
-    let disabled = GM_getValue('disabled');
-    const timestamp = Date.now();
+  static async append(profileId, name) {
+    if (!profileId) {
+      log.append('Storage.append called without profile Id');
+      return;
+    }
 
-    // we add a new record in the format of { 12345: unixtimestamp }
+    let disabled = GM_getValue('disabled');
+
     if (!disabled) disabled = {};
 
-    disabled[profileId] = timestamp;
+    disabled[profileId] = name;
     GM_setValue('disabled', disabled);
   }
 
@@ -85,22 +94,22 @@ class Storage {
       if (profileId && profileId in disabled) return disabled[profileId];
 
       return disabled;
-
     }
 
     return {}
   }
 
-  static purgeOld(timeout = 300000) {
-    const disabled = GM_getValue('disabled');
-    const timestamp = Date.now();
+  static remove(profileId) {
+    let disabled = GM_getValue('disabled');
 
     if (disabled) {
-      const filtered = {};
-      Object.keys(disabled).forEach(k => {
-        if (timestamp < disabled[k] + timeout) filtered[k] = disabled[k];
-      });
-      GM_setValue('disabled', filtered);
+      if (profileId && profileId in disabled) {
+        delete disabled[profileId];
+      } else {
+        disabled = {}
+      }
+
+      GM_setValue('disabled', disabled);
     }
   }
 
@@ -149,6 +158,10 @@ class MemberRow {
     return Utilities.getUserIdfromLink(this.element.find("a[href*='profiles.php']").attr('href'));
   }
 
+  get name() {
+    return this.element.find("a[href*='profiles.php']").find('span[class^=searchText]').text();
+  }
+
   get status() {
     if (this.isHospital) return statuses.hospital;
     if (this.isTraveling) return statuses.traveling;
@@ -168,6 +181,7 @@ class MemberRow {
     log.append(`Filter array is ${fArray.join(', ')}`);
     const checks = [
       false,
+      this.userid in disabled,
       fArray.includes(this.status),
       fArray.includes(this.presence)
     ];
@@ -279,6 +293,15 @@ class WarUI {
               <input type="checkbox" id="tcw-hospital" name="tcw-hospital" ${options.hideHospital ? 'checked' : ''}>
               <label for="tcw-hospital">Hide Hospital</label>
             </p>
+            <p style="margin-top: 10px;">
+              Hidden Enemies <span id="tcw-hiddencount"></span>
+              <div id="tcw-filteredusers" style="width: 300px; height: 100px; overflow-y: scroll; background-color: black; border: 1px solid gray;">
+              
+              </div>
+              <p>
+                  <button type="button" id="tcw-clearhidden">Clear All</button>
+              </p>
+            </p>    
           </div>
           <div style="float: right;">
             <button type="button" id="tcw-refresh" style=>Refresh</button>
@@ -287,6 +310,10 @@ class WarUI {
       </div>
     `);
     membersParent.before(controlsDiv);
+    WarUI.RefreshHiddenUsers();
+    $(`${selectors.memberRow}`).find('div[class^=attack]').each((index, element) => { $(element).append('<button class="tcw-filter" type="button" style="width: 20%;float: right;margin-top: 10%;">&#128065</button>')});
+    $('#tcw-clearhidden').on('click', () => WarUI.RemoveAllHidden());
+    $('.tcw-filter').on('click', (event) => addToWarFilter($(event.currentTarget).closest('li')));
     $('#tcw-refresh').on('click', () => window.location.reload());
     $('#tcw-idle').on('click', () => WarView.toggleByIcons(selectors.idle));
     $('#tcw-offline').on('click', () => WarView.toggleByIcons(selectors.offline));
@@ -296,6 +323,31 @@ class WarUI {
     $('#tcw-okay').on('click', () => WarView.toggleByStatus('Okay'));
     $('#tcw-hospital').on('click', () => WarView.toggleByStatus('Hospital'));
     $('#tcw-controls').on('click', () => Storage.saveFilters());
+  }
+
+  static RemoveAllHidden() {
+    Storage.remove()
+    WarUI.RefreshHiddenUsers();
+  }
+
+  static RefreshHiddenUsers() {
+    // Create the list of filtered users to show inside the corresponding div
+    const disabled = Storage.get();
+
+    $('#tcw-filteredusers').empty();
+    for (let [key, value] of Object.entries(disabled)) {
+      let element = $(`<p>${value} [${key}]<button class="tcw-hiddenremove" type="button">Remove</button></p>`);
+      $('#tcw-filteredusers').append(element);
+      element.find('button').on('click', () => {
+        Storage.remove(key);
+        WarUI.RefreshHiddenUsers();
+      });
+    }
+
+    $('#tcw-hiddencount').text(Object.keys(disabled).length);
+
+    let options = Storage.getFilters(defaults);
+    WarView.process(options);
   }
 }
 
