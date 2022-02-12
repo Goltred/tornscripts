@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Torn Faction War Filter
 // @namespace https://github.com/Goltred/tornscripts
-// @version 1.2.0
+// @version 1.2.1
 // @description Filtering controls for faction war view.
 // @author Goltred
 // @updateURL https://raw.githubusercontent.com/Goltred/tornscripts/master/tornFactionWar.user.js
@@ -311,7 +311,9 @@ class WarUI {
     `);
     membersParent.before(controlsDiv);
     WarUI.RefreshHiddenUsers();
-    $(`${selectors.memberRow}`).find('div[class^=attack]').each((index, element) => { $(element).append('<button class="tcw-filter" type="button" style="width: 20%;float: right;margin-top: 10%;">&#128065</button>')});
+
+    // Add the filter button on each row
+    $(`${selectors.memberRow}`).find('div[class^=level]').each((index, element) => { $(element).append('<button class="tcw-filter" type="button" style="width: 20%;float: left;margin-top: 10%;">&#128065</button>')});
     $('#tcw-clearhidden').on('click', () => WarUI.RemoveAllHidden());
     $('.tcw-filter').on('click', (event) => addToWarFilter($(event.currentTarget).closest('li')));
     $('#tcw-refresh').on('click', () => window.location.reload());
