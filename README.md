@@ -18,7 +18,7 @@ Modify faction pages to be able to filter out people and revive more efficiently
 Easily manage restocking for your company
 
 ### tornCityFinder.js - [Docs](Docs/torncityfinder.md) / [Install][tcf-raw]
-![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-green)
+![PC Support](https://img.shields.io/badge/PC-Supported-green) ![Mobile Support](https://img.shields.io/badge/Mobile-Supported-yellow)
 
 Fast and easy access to items around the city map
 
